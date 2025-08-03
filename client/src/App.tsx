@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import Sponsors from "@/pages/sponsors";
 import Receipts from "@/pages/receipts";
 import Costs from "@/pages/costs";
+import Funds from "@/pages/funds";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
@@ -38,6 +39,7 @@ function Router() {
               <Route path="/sponsors" component={Sponsors} />
               <Route path="/receipts" component={Receipts} />
               <Route path="/costs" component={Costs} />
+              <Route path="/funds" component={Funds} />
               <Route component={NotFound} />
             </Switch>
           </div>

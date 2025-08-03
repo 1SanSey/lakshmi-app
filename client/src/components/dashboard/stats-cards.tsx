@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, BarChart3, Handshake } from "lucide-react";
+import { TrendingUp, TrendingDown, BarChart3, Handshake, PiggyBank } from "lucide-react";
 
 interface DashboardStats {
   totalReceipts: number;
   totalCosts: number;
   netBalance: number;
   activeSponsors: number;
+  activeFunds: number;
+  totalFundPercentage: number;
 }
 
 export default function StatsCards() {
@@ -23,8 +25,8 @@ export default function StatsCards() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {[...Array(5)].map((_, i) => (
           <div key={i} className="stat-card animate-pulse">
             <div className="h-20 bg-muted rounded"></div>
           </div>
@@ -62,10 +64,18 @@ export default function StatsCards() {
       color: "text-accent",
       bgColor: "bg-accent/10",
     },
+    {
+      title: "Active Funds",
+      value: `${stats?.activeFunds || 0} (${(stats?.totalFundPercentage || 0).toFixed(1)}%)`,
+      icon: PiggyBank,
+      color: (stats?.totalFundPercentage || 0) === 100 ? "text-secondary" : 
+             (stats?.totalFundPercentage || 0) > 100 ? "text-destructive" : "text-amber-600",
+      bgColor: "bg-primary/10",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
       {cards.map((card, index) => (
         <div key={index} className="stat-card">
           <div className="flex items-center justify-between">

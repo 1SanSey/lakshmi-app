@@ -1,6 +1,6 @@
 # Overview
 
-This is a full-stack financial management application built for personal accounting and sponsor relationship management. The application allows users to track income through receipts from sponsors, monitor expenses through cost management, and view comprehensive dashboard analytics. It's designed as a Progressive Web App (PWA) with offline capabilities and mobile-responsive design.
+This is a full-stack financial management application built for personal accounting and sponsor relationship management. The application allows users to track income through receipts from sponsors, monitor expenses through cost management, manage funds with percentage-based automatic distribution, and view comprehensive dashboard analytics. It's designed as a Progressive Web App (PWA) with offline capabilities and mobile-responsive design.
 
 # User Preferences
 
@@ -30,6 +30,8 @@ Preferred communication style: Simple, everyday language.
   - Sponsors table for managing sponsor relationships (name, phone, active status)
   - Receipts table for income tracking (linked to sponsors, amount, date, description)
   - Costs table for expense tracking (category-based, amount, date, description)
+  - Funds table for fund management (name, description, percentage allocation, active status)
+  - Fund distributions table for tracking automatic fund allocations from receipts
   - Sessions table for authentication session persistence
 - **Relationships**: Foreign key constraints with cascade deletes for data integrity
 - **Validation**: Zod schemas shared between client and server for consistent validation
@@ -58,6 +60,15 @@ Preferred communication style: Simple, everyday language.
 - **TypeScript**: Full type safety across client, server, and shared code
 - **Code Organization**: Monorepo structure with shared schemas and utilities
 - **Development Tools**: Hot module replacement, runtime error overlay, and development banner integration
+
+## Recent Changes (August 2025)
+- **Funds Management System**: Added comprehensive fund management with percentage-based automatic distribution
+  - Created funds table with name, description, percentage allocation, and active status
+  - Implemented fund distributions table to track allocations from each receipt
+  - Built automatic fund distribution system that triggers on receipt creation/update
+  - Added funds management page with CRUD operations and distribution summary
+  - Enhanced dashboard with fund statistics showing active funds and total percentage allocation
+  - Integrated fund distribution display components for receipt management
 
 # External Dependencies
 

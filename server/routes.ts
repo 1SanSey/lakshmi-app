@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertSponsorSchema, insertReceiptSchema, insertCostSchema } from "@shared/schema";
+import { insertSponsorSchema, insertReceiptSchema, insertCostSchema, insertFundSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -129,6 +129,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const validatedData = insertReceiptSchema.parse(req.body);
       const receipt = await storage.createReceipt(validatedData, userId);
+      
+      // Automatically distribute funds for this receipt
+      await storage.distributeFundsForReceipt(receipt.id, receipt.amount, userId);
+      
       res.status(201).json(receipt);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -147,6 +151,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!receipt) {
         return res.status(404).json({ message: "Receipt not found" });
       }
+      
+      // Re-distribute funds if amount changed
+      if (validatedData.amount) {
+        await storage.distributeFundsForReceipt(receipt.id, receipt.amount, userId);
+      }
+      
       res.json(receipt);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -245,6 +255,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting cost:", error);
       res.status(500).json({ message: "Failed to delete cost" });
+    }
+  });
+
+  // Fund routes
+  app.get("/api/funds", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const funds = await storage.getFunds(userId);
+      res.json(funds);
+    } catch (error) {
+      console.error("Error fetching funds:", error);
+      res.status(500).json({ message: "Failed to fetch funds" });
+    }
+  });
+
+  app.get("/api/funds/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const fund = await storage.getFund(req.params.id, userId);
+      if (!fund) {
+        return res.status(404).json({ message: "Fund not found" });
+      }
+      res.json(fund);
+    } catch (error) {
+      console.error("Error fetching fund:", error);
+      res.status(500).json({ message: "Failed to fetch fund" });
+    }
+  });
+
+  app.post("/api/funds", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertFundSchema.parse(req.body);
+      const fund = await storage.createFund(validatedData, userId);
+      res.status(201).json(fund);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating fund:", error);
+      res.status(500).json({ message: "Failed to create fund" });
+    }
+  });
+
+  app.put("/api/funds/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertFundSchema.partial().parse(req.body);
+      const fund = await storage.updateFund(req.params.id, validatedData, userId);
+      if (!fund) {
+        return res.status(404).json({ message: "Fund not found" });
+      }
+      res.json(fund);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating fund:", error);
+      res.status(500).json({ message: "Failed to update fund" });
+    }
+  });
+
+  app.delete("/api/funds/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const deleted = await storage.deleteFund(req.params.id, userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Fund not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting fund:", error);
+      res.status(500).json({ message: "Failed to delete fund" });
+    }
+  });
+
+  // Fund distribution routes
+  app.get("/api/receipts/:receiptId/distributions", isAuthenticated, async (req: any, res) => {
+    try {
+      const distributions = await storage.getFundDistributionsByReceipt(req.params.receiptId);
+      res.json(distributions);
+    } catch (error) {
+      console.error("Error fetching fund distributions:", error);
+      res.status(500).json({ message: "Failed to fetch fund distributions" });
     }
   });
 

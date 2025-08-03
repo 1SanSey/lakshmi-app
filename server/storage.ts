@@ -3,6 +3,8 @@ import {
   sponsors,
   receipts,
   costs,
+  funds,
+  fundDistributions,
   type User,
   type UpsertUser,
   type Sponsor,
@@ -11,6 +13,10 @@ import {
   type InsertReceipt,
   type Cost,
   type InsertCost,
+  type Fund,
+  type InsertFund,
+  type FundDistribution,
+  type InsertFundDistribution,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, ilike, gte, lte, count, sum } from "drizzle-orm";
@@ -48,12 +54,27 @@ export interface IStorage {
     totalCosts: number;
     netBalance: number;
     activeSponsors: number;
+    activeFunds: number;
+    totalFundPercentage: number;
   }>;
   
   getRecentActivity(userId: string, limit?: number): Promise<{
     recentReceipts: (Receipt & { sponsorName?: string })[];
     recentCosts: Cost[];
   }>;
+
+  // Fund operations
+  getFunds(userId: string): Promise<Fund[]>;
+  createFund(fund: InsertFund, userId: string): Promise<Fund>;
+  updateFund(id: string, fund: Partial<InsertFund>, userId: string): Promise<Fund | undefined>;
+  deleteFund(id: string, userId: string): Promise<boolean>;
+  getFund(id: string, userId: string): Promise<Fund | undefined>;
+
+  // Fund distribution operations
+  createFundDistribution(distribution: InsertFundDistribution): Promise<FundDistribution>;
+  getFundDistributionsByReceipt(receiptId: string): Promise<(FundDistribution & { fundName: string })[]>;
+  deleteFundDistributionsByReceipt(receiptId: string): Promise<void>;
+  distributeFundsForReceipt(receiptId: string, receiptAmount: string, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -272,6 +293,8 @@ export class DatabaseStorage implements IStorage {
     totalCosts: number;
     netBalance: number;
     activeSponsors: number;
+    activeFunds: number;
+    totalFundPercentage: number;
   }> {
     const [receiptStats] = await db
       .select({ 
@@ -294,6 +317,14 @@ export class DatabaseStorage implements IStorage {
       .from(sponsors)
       .where(and(eq(sponsors.userId, userId), eq(sponsors.isActive, true)));
 
+    const [fundStats] = await db
+      .select({ 
+        count: count(),
+        totalPercentage: sum(funds.percentage).mapWith(Number)
+      })
+      .from(funds)
+      .where(and(eq(funds.userId, userId), eq(funds.isActive, true)));
+
     const totalReceipts = receiptStats?.total || 0;
     const totalCosts = costStats?.total || 0;
 
@@ -302,6 +333,8 @@ export class DatabaseStorage implements IStorage {
       totalCosts,
       netBalance: totalReceipts - totalCosts,
       activeSponsors: sponsorStats?.count || 0,
+      activeFunds: fundStats?.count || 0,
+      totalFundPercentage: fundStats?.totalPercentage || 0,
     };
   }
 
@@ -341,6 +374,104 @@ export class DatabaseStorage implements IStorage {
       })),
       recentCosts,
     };
+  }
+
+  // Fund operations
+  async getFunds(userId: string): Promise<Fund[]> {
+    return await db
+      .select()
+      .from(funds)
+      .where(eq(funds.userId, userId))
+      .orderBy(desc(funds.createdAt));
+  }
+
+  async createFund(fund: InsertFund, userId: string): Promise<Fund> {
+    const [newFund] = await db
+      .insert(funds)
+      .values({ ...fund, userId })
+      .returning();
+    return newFund;
+  }
+
+  async updateFund(id: string, fund: Partial<InsertFund>, userId: string): Promise<Fund | undefined> {
+    const [updatedFund] = await db
+      .update(funds)
+      .set({ ...fund, updatedAt: new Date() })
+      .where(and(eq(funds.id, id), eq(funds.userId, userId)))
+      .returning();
+    return updatedFund;
+  }
+
+  async deleteFund(id: string, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(funds)
+      .where(and(eq(funds.id, id), eq(funds.userId, userId)));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getFund(id: string, userId: string): Promise<Fund | undefined> {
+    const [fund] = await db
+      .select()
+      .from(funds)
+      .where(and(eq(funds.id, id), eq(funds.userId, userId)));
+    return fund;
+  }
+
+  // Fund distribution operations
+  async createFundDistribution(distribution: InsertFundDistribution): Promise<FundDistribution> {
+    const [newDistribution] = await db
+      .insert(fundDistributions)
+      .values(distribution)
+      .returning();
+    return newDistribution;
+  }
+
+  async getFundDistributionsByReceipt(receiptId: string): Promise<(FundDistribution & { fundName: string })[]> {
+    return await db
+      .select({
+        id: fundDistributions.id,
+        receiptId: fundDistributions.receiptId,
+        fundId: fundDistributions.fundId,
+        amount: fundDistributions.amount,
+        percentage: fundDistributions.percentage,
+        createdAt: fundDistributions.createdAt,
+        fundName: funds.name,
+      })
+      .from(fundDistributions)
+      .innerJoin(funds, eq(fundDistributions.fundId, funds.id))
+      .where(eq(fundDistributions.receiptId, receiptId));
+  }
+
+  async deleteFundDistributionsByReceipt(receiptId: string): Promise<void> {
+    await db
+      .delete(fundDistributions)
+      .where(eq(fundDistributions.receiptId, receiptId));
+  }
+
+  async distributeFundsForReceipt(receiptId: string, receiptAmount: string, userId: string): Promise<void> {
+    // Get all active funds for the user
+    const activeFunds = await db
+      .select()
+      .from(funds)
+      .where(and(eq(funds.userId, userId), eq(funds.isActive, true)));
+
+    // Delete existing distributions for this receipt
+    await this.deleteFundDistributionsByReceipt(receiptId);
+
+    // Calculate and create new distributions
+    const amount = parseFloat(receiptAmount);
+    
+    for (const fund of activeFunds) {
+      const percentage = parseFloat(fund.percentage);
+      const distributionAmount = (amount * percentage) / 100;
+      
+      await this.createFundDistribution({
+        receiptId,
+        fundId: fund.id,
+        amount: distributionAmount.toString(),
+        percentage: fund.percentage,
+      });
+    }
   }
 }
 
