@@ -45,7 +45,7 @@ export default function Sponsors() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/sponsors/${id}`);
+      await apiRequest(`/api/sponsors/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sponsors"] });

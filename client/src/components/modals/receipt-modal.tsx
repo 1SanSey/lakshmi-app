@@ -102,13 +102,13 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
         amount: totalAmount,
       };
       
-      const response = await apiRequest("POST", "/api/receipts", receiptData);
+      const response = await apiRequest("/api/receipts", "POST", receiptData);
       const newReceipt = await response.json();
       
       // Create receipt items for each sponsor
       for (const item of data.sponsorItems) {
         if (item.sponsorId && item.amount && parseFloat(item.amount) > 0) {
-          await apiRequest("POST", `/api/receipts/${newReceipt.id}/items`, {
+          await apiRequest(`/api/receipts/${newReceipt.id}/items`, "POST", {
             sponsorId: item.sponsorId,
             amount: parseFloat(item.amount),
           });

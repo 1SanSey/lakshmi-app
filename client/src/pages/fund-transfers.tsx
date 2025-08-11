@@ -48,7 +48,7 @@ export default function FundTransfers() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/fund-transfers/${id}`);
+      await apiRequest(`/api/fund-transfers/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/fund-transfers"] });
@@ -182,13 +182,13 @@ export default function FundTransfers() {
                       </p>
                     )}
                     <div className="text-xs text-muted-foreground">
-                      {new Date(transfer.createdAt).toLocaleDateString('ru-RU', {
+                      {transfer.createdAt ? new Date(transfer.createdAt).toLocaleDateString('ru-RU', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
-                      })}
+                      }) : 'Неизвестно'}
                     </div>
                   </div>
                   <div className="flex gap-1">

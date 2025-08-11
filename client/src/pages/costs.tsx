@@ -67,7 +67,7 @@ export default function Costs() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/costs/${id}`);
+      await apiRequest(`/api/costs/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/costs"] });

@@ -41,14 +41,14 @@ export function IncomeSourceFundDistributionModal({
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: distributions = [], isLoading } = useQuery({
+  const { data: distributions = [], isLoading } = useQuery<(IncomeSourceFundDistribution & { fundName: string })[]>({
     queryKey: ["/api/income-sources", incomeSource?.id, "fund-distributions"],
     enabled: !!incomeSource?.id,
   });
 
   const createDistributionMutation = useMutation({
     mutationFn: async ({ fundId, percentage }: { fundId: string; percentage: string }) => {
-      return await apiRequest("POST", `/api/income-sources/${incomeSource!.id}/fund-distributions`, { fundId, percentage });
+      return await apiRequest(`/api/income-sources/${incomeSource!.id}/fund-distributions`, "POST", { fundId, percentage });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -72,7 +72,7 @@ export function IncomeSourceFundDistributionModal({
 
   const deleteAllDistributionsMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("DELETE", `/api/income-sources/${incomeSource!.id}/fund-distributions`);
+      return await apiRequest(`/api/income-sources/${incomeSource!.id}/fund-distributions`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

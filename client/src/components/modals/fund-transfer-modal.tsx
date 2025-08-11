@@ -59,7 +59,7 @@ export default function FundTransferModal({ open, onClose, funds }: FundTransfer
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      await apiRequest("POST", "/api/fund-transfers", {
+      await apiRequest("/api/fund-transfers", "POST", {
         ...data,
         amount: parseFloat(data.amount),
       });

@@ -83,7 +83,7 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
       const endpoint = fund ? `/api/funds/${fund.id}` : "/api/funds";
       const method = fund ? "PUT" : "POST";
       
-      return await apiRequest(method, endpoint, data);
+      return await apiRequest(endpoint, method, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/funds"] });

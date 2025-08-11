@@ -17,17 +17,17 @@ function IncomeSources() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: incomeSources = [], isLoading } = useQuery({
+  const { data: incomeSources = [], isLoading } = useQuery<IncomeSource[]>({
     queryKey: ["/api/income-sources"],
   });
 
-  const { data: funds = [] } = useQuery({
+  const { data: funds = [] } = useQuery<Fund[]>({
     queryKey: ["/api/funds"],
   });
 
   const deleteIncomeSourceMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/income-sources/${id}`);
+      await apiRequest(`/api/income-sources/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/income-sources"] });

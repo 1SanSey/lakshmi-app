@@ -43,7 +43,7 @@ export default function Receipts() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/receipts/${id}`);
+      await apiRequest(`/api/receipts/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/receipts"] });
