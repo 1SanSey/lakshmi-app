@@ -14,25 +14,25 @@ import CostModal from "@/components/modals/cost-modal";
 import type { Cost } from "@shared/schema";
 
 const COST_CATEGORIES = [
-  "Office Supplies",
-  "Marketing",
-  "Travel",
-  "Utilities",
-  "Professional Services",
-  "Equipment",
-  "Software",
-  "Other"
+  "Офисные принадлежности",
+  "Маркетинг",
+  "Путешествия",
+  "Коммунальные услуги",
+  "Профессиональные услуги",
+  "Оборудование",
+  "Программное обеспечение",
+  "Другое"
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Office Supplies": "bg-blue-100 text-blue-800",
-  "Marketing": "bg-purple-100 text-purple-800",
-  "Travel": "bg-green-100 text-green-800",
-  "Utilities": "bg-yellow-100 text-yellow-800",
-  "Professional Services": "bg-indigo-100 text-indigo-800",
-  "Equipment": "bg-red-100 text-red-800",
-  "Software": "bg-pink-100 text-pink-800",
-  "Other": "bg-gray-100 text-gray-800"
+  "Офисные принадлежности": "bg-blue-100 text-blue-800",
+  "Маркетинг": "bg-purple-100 text-purple-800",
+  "Путешествия": "bg-green-100 text-green-800",
+  "Коммунальные услуги": "bg-yellow-100 text-yellow-800",
+  "Профессиональные услуги": "bg-indigo-100 text-indigo-800",
+  "Оборудование": "bg-red-100 text-red-800",
+  "Программное обеспечение": "bg-pink-100 text-pink-800",
+  "Другое": "bg-gray-100 text-gray-800"
 };
 
 export default function Costs() {
@@ -49,8 +49,8 @@ export default function Costs() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: "Неавторизован",
+        description: "Вы вышли из системы. Выполняется повторный вход...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -73,15 +73,15 @@ export default function Costs() {
       queryClient.invalidateQueries({ queryKey: ["/api/costs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       toast({
-        title: "Success",
-        description: "Cost deleted successfully",
+        title: "Успешно",
+        description: "Расход удален успешно",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: "Неавторизован",
+          description: "Вы вышли из системы. Выполняется повторный вход...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -90,8 +90,8 @@ export default function Costs() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to delete cost",
+        title: "Ошибка",
+        description: "Не удалось удалить расход",
         variant: "destructive",
       });
     },
@@ -108,7 +108,7 @@ export default function Costs() {
   };
 
   const handleDelete = (cost: Cost) => {
-    if (confirm(`Are you sure you want to delete this cost?`)) {
+    if (confirm(`Вы уверены, что хотите удалить этот расход?`)) {
       deleteMutation.mutate(cost.id);
     }
   };
@@ -150,15 +150,15 @@ export default function Costs() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="mb-4 sm:mb-0">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Costs</h2>
-            <p className="text-gray-600">Track your expenses and costs</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Расходы</h2>
+            <p className="text-gray-600">Отслеживание ваших расходов и затрат</p>
           </div>
           <Button 
             onClick={handleAdd}
             className="bg-destructive hover:bg-red-700 text-white"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Cost
+            Добавить расход
           </Button>
         </div>
 
@@ -168,7 +168,7 @@ export default function Costs() {
               <div className="relative flex-1">
                 <Input
                   type="text"
-                  placeholder="Search costs..."
+                  placeholder="Поиск расходов..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10"
@@ -177,10 +177,10 @@ export default function Costs() {
               </div>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue placeholder="Все категории" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="all">Все категории</SelectItem>
                   {COST_CATEGORIES.map((cat) => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
@@ -188,7 +188,7 @@ export default function Costs() {
               </Select>
               <Input
                 type="date"
-                placeholder="From date"
+                placeholder="Дата от"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
                 className="w-auto"
@@ -202,26 +202,26 @@ export default function Costs() {
                 <TableRow>
                   <TableHead className="cursor-pointer hover:bg-muted/50">
                     <div className="flex items-center">
-                      Date
+                      Дата
                       <ArrowUpDown className="ml-1 h-4 w-4" />
                     </div>
                   </TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
+                  <TableHead>Описание</TableHead>
+                  <TableHead>Категория</TableHead>
                   <TableHead className="cursor-pointer hover:bg-muted/50">
                     <div className="flex items-center">
-                      Amount
+                      Сумма
                       <ArrowUpDown className="ml-1 h-4 w-4" />
                     </div>
                   </TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {costs.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      {search || category || fromDate ? "No costs found matching your criteria." : "No costs yet. Add your first cost to get started."}
+                      {search || category || fromDate ? "Расходы по вашим критериям не найдены." : "Расходов пока нет. Добавьте свой первый расход, чтобы начать."}
                     </TableCell>
                   </TableRow>
                 ) : (

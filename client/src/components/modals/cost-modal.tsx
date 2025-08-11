@@ -32,14 +32,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const COST_CATEGORIES = [
-  "Office Supplies",
-  "Marketing",
-  "Travel",
-  "Utilities",
-  "Professional Services",
-  "Equipment",
-  "Software",
-  "Other"
+  "Офисные принадлежности",
+  "Маркетинг",
+  "Путешествия",
+  "Коммунальные услуги",
+  "Профессиональные услуги",
+  "Оборудование",
+  "Программное обеспечение",
+  "Другое"
 ];
 
 const formSchema = insertCostSchema.extend({
@@ -141,7 +141,7 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{cost ? "Edit Cost" : "Add Cost"}</DialogTitle>
+          <DialogTitle>{cost ? "Редактировать расход" : "Добавить расход"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -151,7 +151,7 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>Дата</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -165,10 +165,10 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Описание</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter description"
+                      placeholder="Введите описание"
                       {...field}
                     />
                   </FormControl>
@@ -182,11 +182,11 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>Категория</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue placeholder="Выберите категорию" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -207,7 +207,7 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Сумма</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
@@ -235,14 +235,14 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
                 onClick={handleClose}
                 className="flex-1"
               >
-                Cancel
+                Отмена
               </Button>
               <Button
                 type="submit"
                 disabled={mutation.isPending}
                 className="flex-1 bg-destructive hover:bg-red-700"
               >
-                {mutation.isPending ? "Saving..." : "Save"}
+                {mutation.isPending ? "Сохранение..." : "Сохранить"}
               </Button>
             </div>
           </form>

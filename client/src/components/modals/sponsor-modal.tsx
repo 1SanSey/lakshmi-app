@@ -113,7 +113,7 @@ export default function SponsorModal({ isOpen, onClose, sponsor }: SponsorModalP
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{sponsor ? "Edit Sponsor" : "Add Sponsor"}</DialogTitle>
+          <DialogTitle>{sponsor ? "Редактировать спонсора" : "Добавить спонсора"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -123,10 +123,10 @@ export default function SponsorModal({ isOpen, onClose, sponsor }: SponsorModalP
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sponsor Name</FormLabel>
+                  <FormLabel>Имя спонсора</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter sponsor name"
+                      placeholder="Введите имя спонсора"
                       {...field}
                     />
                   </FormControl>
@@ -140,10 +140,10 @@ export default function SponsorModal({ isOpen, onClose, sponsor }: SponsorModalP
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
+                  <FormLabel>Номер телефона</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter phone number"
+                      placeholder="Введите номер телефона"
                       type="tel"
                       {...field}
                     />
@@ -159,9 +159,9 @@ export default function SponsorModal({ isOpen, onClose, sponsor }: SponsorModalP
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel>Active Status</FormLabel>
+                    <FormLabel>Статус активности</FormLabel>
                     <div className="text-sm text-muted-foreground">
-                      Is this sponsor currently active?
+                      Является ли этот спонсор в настоящее время активным?
                     </div>
                   </div>
                   <FormControl>
@@ -181,14 +181,14 @@ export default function SponsorModal({ isOpen, onClose, sponsor }: SponsorModalP
                 onClick={handleClose}
                 className="flex-1"
               >
-                Cancel
+                Отмена
               </Button>
               <Button
                 type="submit"
                 disabled={mutation.isPending}
                 className="flex-1 bg-primary hover:bg-blue-700"
               >
-                {mutation.isPending ? "Saving..." : "Save"}
+                {mutation.isPending ? "Сохранение..." : "Сохранить"}
               </Button>
             </div>
           </form>

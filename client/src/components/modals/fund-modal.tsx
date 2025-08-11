@@ -122,9 +122,9 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{fund ? "Edit Fund" : "Create Fund"}</DialogTitle>
+          <DialogTitle>{fund ? "Редактировать фонд" : "Создать фонд"}</DialogTitle>
           <DialogDescription>
-            {fund ? "Update fund details and allocation percentage." : "Create a new fund for distributing incoming receipts."}
+            {fund ? "Обновить детали фонда и процент распределения." : "Создать новый фонд для распределения входящих поступлений."}
           </DialogDescription>
         </DialogHeader>
 
@@ -135,9 +135,9 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Fund Name</FormLabel>
+                  <FormLabel>Название фонда</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Emergency Fund, Savings..." {...field} />
+                    <Input placeholder="например, Резервный фонд, Сбережения..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -149,10 +149,10 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>Описание (необязательно)</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Brief description of the fund's purpose..."
+                      placeholder="Краткое описание назначения фонда..."
                       className="resize-none"
                       rows={3}
                       {...field}
@@ -169,7 +169,7 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
               name="percentage"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Allocation Percentage</FormLabel>
+                  <FormLabel>Процент распределения</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input 
@@ -196,9 +196,9 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base">Active</FormLabel>
+                    <FormLabel className="text-base">Активный</FormLabel>
                     <div className="text-sm text-muted-foreground">
-                      Include this fund in automatic distributions
+                      Включить этот фонд в автоматические распределения
                     </div>
                   </div>
                   <FormControl>
@@ -213,10 +213,10 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
+                Отмена
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Saving..." : fund ? "Update Fund" : "Create Fund"}
+                {mutation.isPending ? "Сохранение..." : fund ? "Обновить фонд" : "Создать фонд"}
               </Button>
             </div>
           </form>

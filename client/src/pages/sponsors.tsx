@@ -27,8 +27,8 @@ export default function Sponsors() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: "Неавторизован",
+        description: "Вы вышли из системы. Выполняется повторный вход...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -50,15 +50,15 @@ export default function Sponsors() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sponsors"] });
       toast({
-        title: "Success",
-        description: "Sponsor deleted successfully",
+        title: "Успешно",
+        description: "Спонсор удален успешно",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: "Неавторизован",
+          description: "Вы вышли из системы. Выполняется повторный вход...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -67,8 +67,8 @@ export default function Sponsors() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to delete sponsor",
+        title: "Ошибка",
+        description: "Не удалось удалить спонсора",
         variant: "destructive",
       });
     },
@@ -85,7 +85,7 @@ export default function Sponsors() {
   };
 
   const handleDelete = (sponsor: Sponsor) => {
-    if (confirm(`Are you sure you want to delete ${sponsor.name}?`)) {
+    if (confirm(`Вы уверены, что хотите удалить ${sponsor.name}?`)) {
       deleteMutation.mutate(sponsor.id);
     }
   };
@@ -127,15 +127,15 @@ export default function Sponsors() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="mb-4 sm:mb-0">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Sponsors</h2>
-            <p className="text-gray-600">Manage your sponsor relationships</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Спонсоры</h2>
+            <p className="text-gray-600">Управление отношениями со спонсорами</p>
           </div>
           <Button 
             onClick={handleAdd}
             className="bg-primary hover:bg-blue-700 text-white"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Sponsor
+            Добавить спонсора
           </Button>
         </div>
 
@@ -145,7 +145,7 @@ export default function Sponsors() {
               <div className="relative flex-1">
                 <Input
                   type="text"
-                  placeholder="Search sponsors..."
+                  placeholder="Поиск спонсоров..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10"
@@ -157,9 +157,9 @@ export default function Sponsors() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Sponsors</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="all">Все спонсоры</SelectItem>
+                  <SelectItem value="active">Активные</SelectItem>
+                  <SelectItem value="inactive">Неактивные</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -171,25 +171,25 @@ export default function Sponsors() {
                 <TableRow>
                   <TableHead className="cursor-pointer hover:bg-muted/50">
                     <div className="flex items-center">
-                      Name
+                      Имя
                       <ArrowUpDown className="ml-1 h-4 w-4" />
                     </div>
                   </TableHead>
                   <TableHead className="cursor-pointer hover:bg-muted/50">
                     <div className="flex items-center">
-                      Phone Number
+                      Номер телефона
                       <ArrowUpDown className="ml-1 h-4 w-4" />
                     </div>
                   </TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>Статус</TableHead>
+                  <TableHead>Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredSponsors.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                      {search ? "No sponsors found matching your search." : "No sponsors yet. Add your first sponsor to get started."}
+                      {search ? "Спонсоры по вашему запросу не найдены." : "Спонсоров пока нет. Добавьте своего первого спонсора, чтобы начать."}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -211,7 +211,7 @@ export default function Sponsors() {
                           variant={sponsor.isActive ? "default" : "secondary"}
                           className={sponsor.isActive ? "bg-secondary text-secondary-foreground" : ""}
                         >
-                          {sponsor.isActive ? "Active" : "Inactive"}
+                          {sponsor.isActive ? "Активный" : "Неактивный"}
                         </Badge>
                       </TableCell>
                       <TableCell>

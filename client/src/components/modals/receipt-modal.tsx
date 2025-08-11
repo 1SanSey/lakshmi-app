@@ -137,7 +137,7 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{receipt ? "Edit Receipt" : "Add Receipt"}</DialogTitle>
+          <DialogTitle>{receipt ? "Редактировать поступление" : "Добавить поступление"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -147,7 +147,7 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>Дата</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -161,10 +161,10 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Описание</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter description"
+                      placeholder="Введите описание"
                       {...field}
                     />
                   </FormControl>
@@ -178,15 +178,15 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
               name="sponsorId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>From Sponsor</FormLabel>
+                  <FormLabel>От спонсора</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select sponsor (optional)" />
+                        <SelectValue placeholder="Выберите спонсора (необязательно)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">Direct/Other</SelectItem>
+                      <SelectItem value="none">Прямое/Другое</SelectItem>
                       {sponsors.map((sponsor) => (
                         <SelectItem key={sponsor.id} value={sponsor.id}>
                           {sponsor.name}
@@ -204,7 +204,7 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Сумма</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
@@ -232,14 +232,14 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
                 onClick={handleClose}
                 className="flex-1"
               >
-                Cancel
+                Отмена
               </Button>
               <Button
                 type="submit"
                 disabled={mutation.isPending}
                 className="flex-1 bg-secondary hover:bg-green-700"
               >
-                {mutation.isPending ? "Saving..." : "Save"}
+                {mutation.isPending ? "Сохранение..." : "Сохранить"}
               </Button>
             </div>
           </form>

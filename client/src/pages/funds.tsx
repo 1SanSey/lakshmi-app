@@ -24,8 +24,8 @@ export default function Funds() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: "Неавторизован",
+        description: "Вы вышли из системы. Выполняется повторный вход...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -47,15 +47,15 @@ export default function Funds() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/funds"] });
       toast({
-        title: "Success",
-        description: "Fund deleted successfully!",
+        title: "Успешно",
+        description: "Фонд удален успешно!",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: "Неавторизован",
+          description: "Вы вышли из системы. Выполняется повторный вход...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -64,8 +64,8 @@ export default function Funds() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to delete fund",
+        title: "Ошибка",
+        description: "Не удалось удалить фонд",
         variant: "destructive",
       });
     },
@@ -77,7 +77,7 @@ export default function Funds() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this fund?")) {
+    if (confirm("Вы уверены, что хотите удалить этот фонд?")) {
       deleteMutation.mutate(id);
     }
   };
@@ -101,7 +101,7 @@ export default function Funds() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-pulse text-muted-foreground">Loading...</div>
+          <div className="animate-pulse text-muted-foreground">Загрузка...</div>
         </div>
       </div>
     );
@@ -111,9 +111,9 @@ export default function Funds() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Funds Management</h1>
+          <h1 className="text-2xl font-bold text-foreground">Управление фондами</h1>
           <p className="text-muted-foreground">
-            Manage your funds and their percentage distributions
+            Управляйте своими фондами и их процентными распределениями
           </p>
         </div>
         <Button 
@@ -121,7 +121,7 @@ export default function Funds() {
           className="w-full sm:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Fund
+          Добавить фонд
         </Button>
       </div>
 
@@ -130,27 +130,27 @@ export default function Funds() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5" />
-            Distribution Summary
+            Сводка распределения
           </CardTitle>
           <CardDescription>
-            Total active fund allocation: {totalPercentage.toFixed(2)}%
+            Общее размещение активных фондов: {totalPercentage.toFixed(2)}%
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             {totalPercentage < 100 && (
               <div className="text-amber-600 dark:text-amber-400 text-sm">
-                ⚠️ Warning: Active funds only allocate {totalPercentage.toFixed(2)}% of incoming receipts
+                ⚠️ Предупреждение: Активные фонды размещают только {totalPercentage.toFixed(2)}% поступающих средств
               </div>
             )}
             {totalPercentage > 100 && (
               <div className="text-red-600 dark:text-red-400 text-sm">
-                ❌ Error: Active funds exceed 100% allocation ({totalPercentage.toFixed(2)}%)
+                ❌ Ошибка: Активные фонды превышают 100% размещения ({totalPercentage.toFixed(2)}%)
               </div>
             )}
             {totalPercentage === 100 && (
               <div className="text-green-600 dark:text-green-400 text-sm">
-                ✅ Perfect: Active funds allocate exactly 100% of incoming receipts
+                ✅ Отлично: Активные фонды размещают ровно 100% поступающих средств
               </div>
             )}
           </div>
@@ -161,7 +161,7 @@ export default function Funds() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
         <Input
-          placeholder="Search funds..."
+          placeholder="Поиск фондов..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10"
@@ -171,13 +171,13 @@ export default function Funds() {
       {/* Funds List */}
       {fundsLoading ? (
         <div className="flex items-center justify-center h-32">
-          <div className="animate-pulse text-muted-foreground">Loading funds...</div>
+          <div className="animate-pulse text-muted-foreground">Загрузка фондов...</div>
         </div>
       ) : filteredFunds.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <div className="text-muted-foreground">
-              {search ? "No funds match your search." : "No funds yet. Create your first fund!"}
+              {search ? "Нет фондов, соответствующих вашему поиску." : "Пока нет фондов. Создайте свой первый фонд!"}
             </div>
           </CardContent>
         </Card>
@@ -191,7 +191,7 @@ export default function Funds() {
                     <CardTitle className="text-lg">{fund.name}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge variant={fund.isActive ? "default" : "secondary"}>
-                        {fund.isActive ? "Active" : "Inactive"}
+                        {fund.isActive ? "Активен" : "Неактивен"}
                       </Badge>
                       <Badge variant="outline">
                         {parseFloat(fund.percentage).toFixed(2)}%

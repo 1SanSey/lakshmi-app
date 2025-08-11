@@ -25,8 +25,8 @@ export default function Receipts() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: "Неавторизован",
+        description: "Вы вышли из системы. Выполняется повторный вход...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -49,15 +49,15 @@ export default function Receipts() {
       queryClient.invalidateQueries({ queryKey: ["/api/receipts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       toast({
-        title: "Success",
-        description: "Receipt deleted successfully",
+        title: "Успешно",
+        description: "Поступление удалено успешно",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: "Неавторизован",
+          description: "Вы вышли из системы. Выполняется повторный вход...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -66,8 +66,8 @@ export default function Receipts() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to delete receipt",
+        title: "Ошибка",
+        description: "Не удалось удалить поступление",
         variant: "destructive",
       });
     },
@@ -84,7 +84,7 @@ export default function Receipts() {
   };
 
   const handleDelete = (receipt: Receipt) => {
-    if (confirm(`Are you sure you want to delete this receipt?`)) {
+    if (confirm(`Вы уверены, что хотите удалить это поступление?`)) {
       deleteMutation.mutate(receipt.id);
     }
   };
@@ -126,15 +126,15 @@ export default function Receipts() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="mb-4 sm:mb-0">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Receipts</h2>
-            <p className="text-gray-600">Track your income and receipts</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Поступления</h2>
+            <p className="text-gray-600">Отслеживание доходов и поступлений</p>
           </div>
           <Button 
             onClick={handleAdd}
             className="bg-secondary hover:bg-green-700 text-white"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Receipt
+            Добавить поступление
           </Button>
         </div>
 
@@ -144,7 +144,7 @@ export default function Receipts() {
               <div className="relative flex-1">
                 <Input
                   type="text"
-                  placeholder="Search receipts..."
+                  placeholder="Поиск поступлений..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10"
@@ -153,14 +153,14 @@ export default function Receipts() {
               </div>
               <Input
                 type="date"
-                placeholder="From date"
+                placeholder="Дата от"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
                 className="w-auto"
               />
               <Input
                 type="date"
-                placeholder="To date"
+                placeholder="Дата до"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
                 className="w-auto"
@@ -174,26 +174,26 @@ export default function Receipts() {
                 <TableRow>
                   <TableHead className="cursor-pointer hover:bg-muted/50">
                     <div className="flex items-center">
-                      Date
+                      Дата
                       <ArrowUpDown className="ml-1 h-4 w-4" />
                     </div>
                   </TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>From</TableHead>
+                  <TableHead>Описание</TableHead>
+                  <TableHead>От</TableHead>
                   <TableHead className="cursor-pointer hover:bg-muted/50">
                     <div className="flex items-center">
-                      Amount
+                      Сумма
                       <ArrowUpDown className="ml-1 h-4 w-4" />
                     </div>
                   </TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {receipts.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      {search || fromDate || toDate ? "No receipts found matching your criteria." : "No receipts yet. Add your first receipt to get started."}
+                      {search || fromDate || toDate ? "Поступления по вашим критериям не найдены." : "Поступлений пока нет. Добавьте своё первое поступление, чтобы начать."}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -206,7 +206,7 @@ export default function Receipts() {
                         </div>
                       </TableCell>
                       <TableCell className="text-gray-900">
-                        {receipt.sponsorName || "Direct"}
+                        {receipt.sponsorName || "Прямое"}
                       </TableCell>
                       <TableCell className="amount-positive">
                         {formatCurrency(receipt.amount)}

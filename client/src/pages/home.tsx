@@ -12,8 +12,8 @@ export default function Home() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: "Неавторизован",
+        description: "Вы вышли из системы. Выполняется повторный вход...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -44,8 +44,8 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h2>
-        <p className="text-gray-600">Overview of your financial activity</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Панель управления</h2>
+        <p className="text-gray-600">Обзор вашей финансовой активности</p>
       </div>
 
       <StatsCards />
