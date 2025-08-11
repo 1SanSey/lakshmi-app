@@ -14,9 +14,9 @@ export default function RecentActivity() {
   });
 
   const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'RUB',
     }).format(parseFloat(amount));
   };
 
@@ -35,10 +35,10 @@ export default function RecentActivity() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="financial-card">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Recent Receipts</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4">Недавние поступления</h3>
         <div className="space-y-3">
           {(!activity?.recentReceipts || activity.recentReceipts.length === 0) ? (
-            <p className="text-muted-foreground text-sm">No recent receipts</p>
+            <p className="text-muted-foreground text-sm">Нет недавних поступлений</p>
           ) : (
             activity.recentReceipts.map((receipt: any) => (
               <div key={receipt.id} className="flex items-center justify-between py-2">
@@ -49,7 +49,7 @@ export default function RecentActivity() {
                   <div>
                     <p className="font-medium text-foreground">{receipt.description}</p>
                     <p className="text-sm text-muted-foreground">
-                      {receipt.sponsorName ? `From ${receipt.sponsorName}` : "Direct"}
+                      {receipt.sponsorName ? `От ${receipt.sponsorName}` : "Прямое"}
                     </p>
                   </div>
                 </div>
@@ -63,10 +63,10 @@ export default function RecentActivity() {
       </div>
 
       <div className="financial-card">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Recent Costs</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4">Недавние расходы</h3>
         <div className="space-y-3">
           {(!activity?.recentCosts || activity.recentCosts.length === 0) ? (
-            <p className="text-muted-foreground text-sm">No recent costs</p>
+            <p className="text-muted-foreground text-sm">Нет недавних расходов</p>
           ) : (
             activity.recentCosts.map((cost: any) => (
               <div key={cost.id} className="flex items-center justify-between py-2">

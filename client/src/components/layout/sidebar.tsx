@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { BarChart3, Handshake, Receipt, CreditCard, PiggyBank, TrendingUp, ArrowLeftRight } from "lucide-react";
 
 const navigation = [
-  { name: "Панель управления", href: "/", icon: BarChart3 },
+  { name: "Обзор", href: "/", icon: BarChart3 },
   { name: "Источники поступлений", href: "/income-sources", icon: TrendingUp },
   { name: "Спонсоры", href: "/sponsors", icon: Handshake },
   { name: "Поступления", href: "/receipts", icon: Receipt },

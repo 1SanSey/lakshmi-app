@@ -17,9 +17,9 @@ export default function StatsCards() {
   });
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'RUB',
     }).format(amount);
   };
 
@@ -37,35 +37,35 @@ export default function StatsCards() {
 
   const cards = [
     {
-      title: "Total Receipts",
+      title: "Общие поступления",
       value: formatCurrency(stats?.totalReceipts || 0),
       icon: TrendingUp,
       color: "text-secondary",
       bgColor: "bg-secondary/10",
     },
     {
-      title: "Total Costs",
+      title: "Общие расходы",
       value: formatCurrency(stats?.totalCosts || 0),
       icon: TrendingDown,
       color: "text-destructive",
       bgColor: "bg-destructive/10",
     },
     {
-      title: "Net Balance",
+      title: "Чистый баланс",
       value: formatCurrency(stats?.netBalance || 0),
       icon: BarChart3,
       color: (stats?.netBalance || 0) >= 0 ? "text-secondary" : "text-destructive",
       bgColor: "bg-primary/10",
     },
     {
-      title: "Active Sponsors",
+      title: "Активные спонсоры",
       value: stats?.activeSponsors?.toString() || "0",
       icon: Handshake,
       color: "text-accent",
       bgColor: "bg-accent/10",
     },
     {
-      title: "Active Funds",
+      title: "Активные фонды",
       value: `${stats?.activeFunds || 0} (${(stats?.totalFundPercentage || 0).toFixed(1)}%)`,
       icon: PiggyBank,
       color: (stats?.totalFundPercentage || 0) === 100 ? "text-secondary" : 

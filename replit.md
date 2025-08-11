@@ -72,6 +72,21 @@ Preferred communication style: Simple, everyday language.
   - Added navigation for income sources in both desktop sidebar and mobile navigation
   - Fixed navigation warning by replacing nested anchor tags with div elements
 
+- **Fund Transfer System**: Implemented complete fund-to-fund transfer functionality
+  - Created fundTransfers table with proper schema and relationships
+  - Built API endpoints for creating, retrieving and deleting fund transfers
+  - Implemented automatic balance calculation including initial balance and transfers
+  - Added fund transfer page with modal for creating transfers
+  - Updated funds page to display real-time balances
+  - Added fund transfer navigation to sidebar and mobile menu
+  - Fixed cache invalidation issues for immediate UI updates
+
+- **Russian Translation**: Completed full translation of dashboard and navigation
+  - Translated all dashboard statistics cards and recent activity sections
+  - Changed currency formatting to Russian Ruble (RUB) with proper locale
+  - Updated navigation labels from "Панель управления" to "Обзор"
+  - Translated error messages and success notifications throughout the app
+
 # External Dependencies
 
 ## Database & ORM
