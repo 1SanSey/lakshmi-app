@@ -179,7 +179,7 @@ export class MemStorage implements IStorage {
       result = result.filter(c => c.description.toLowerCase().includes(search.toLowerCase()));
     }
     
-    if (category) {
+    if (category && category !== "all") {
       result = result.filter(c => c.category === category);
     }
     

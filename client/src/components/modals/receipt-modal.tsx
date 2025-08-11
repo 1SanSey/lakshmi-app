@@ -60,7 +60,7 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
       date: new Date().toISOString().split('T')[0],
       description: "",
       amount: "",
-      sponsorId: "",
+      sponsorId: "none",
     },
   });
 
@@ -70,7 +70,7 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
         ...data,
         date: new Date(data.date),
         amount: parseFloat(data.amount),
-        sponsorId: data.sponsorId || null,
+        sponsorId: data.sponsorId === "none" ? null : data.sponsorId || null,
       };
       const url = receipt ? `/api/receipts/${receipt.id}` : "/api/receipts";
       const method = receipt ? "PUT" : "POST";
@@ -112,14 +112,14 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
         date: receiptDate.toISOString().split('T')[0],
         description: receipt.description,
         amount: receipt.amount.toString(),
-        sponsorId: receipt.sponsorId || "",
+        sponsorId: receipt.sponsorId || "none",
       });
     } else {
       form.reset({
         date: new Date().toISOString().split('T')[0],
         description: "",
         amount: "",
-        sponsorId: "",
+        sponsorId: "none",
       });
     }
   }, [receipt, form]);
@@ -186,7 +186,7 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Direct/Other</SelectItem>
+                      <SelectItem value="none">Direct/Other</SelectItem>
                       {sponsors.map((sponsor) => (
                         <SelectItem key={sponsor.id} value={sponsor.id}>
                           {sponsor.name}
