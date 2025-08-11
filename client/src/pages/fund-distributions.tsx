@@ -133,9 +133,18 @@ export default function FundDistributions() {
 
   const deleteDistributionMutation = useMutation({
     mutationFn: async (distributionId: string) => {
-      await apiRequest(`/api/distribution-history/${distributionId}`, {
+      const response = await fetch(`/api/distribution-history/${distributionId}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/distribution-history"] });
