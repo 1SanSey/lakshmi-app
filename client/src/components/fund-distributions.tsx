@@ -82,7 +82,7 @@ export default function FundDistributions({ receiptId, receiptAmount }: FundDist
             </div>
             <div className="text-right">
               <div className="font-medium">
-                ${parseFloat(distribution.amount).toFixed(2)}
+                {parseFloat(distribution.amount).toLocaleString('ru-RU')} ₽
               </div>
               <Badge variant="outline" className="text-xs">
                 {parseFloat(distribution.percentage).toFixed(2)}%
@@ -94,16 +94,16 @@ export default function FundDistributions({ receiptId, receiptAmount }: FundDist
         <div className="pt-3 border-t border-border">
           <div className="flex items-center justify-between font-medium">
             <span>Total Distributed</span>
-            <span>${totalDistributed.toFixed(2)}</span>
+            <span>{totalDistributed.toLocaleString('ru-RU')} ₽</span>
           </div>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>Receipt Amount</span>
-            <span>${parseFloat(receiptAmount).toFixed(2)}</span>
+            <span>{parseFloat(receiptAmount).toLocaleString('ru-RU')} ₽</span>
           </div>
           {totalDistributed !== parseFloat(receiptAmount) && (
             <div className="flex items-center justify-between text-sm text-amber-600 dark:text-amber-400">
               <span>Difference</span>
-              <span>${(parseFloat(receiptAmount) - totalDistributed).toFixed(2)}</span>
+              <span>{(parseFloat(receiptAmount) - totalDistributed).toLocaleString('ru-RU')} ₽</span>
             </div>
           )}
         </div>

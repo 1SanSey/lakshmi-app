@@ -90,9 +90,9 @@ export default function Receipts() {
   };
 
   const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'RUB',
     }).format(parseFloat(amount));
   };
 
