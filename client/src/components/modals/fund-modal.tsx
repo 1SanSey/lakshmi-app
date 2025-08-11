@@ -166,7 +166,7 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">Активный</FormLabel>
                     <div className="text-sm text-muted-foreground">
-                      Включить этот фонд в автоматические распределения
+                      Фонд будет доступен для распределения средств
                     </div>
                   </div>
                   <FormControl>
