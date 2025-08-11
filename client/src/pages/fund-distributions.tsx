@@ -30,9 +30,7 @@ export default function FundDistributions() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest(`/api/manual-fund-distributions/${id}`, {
-        method: "DELETE",
-      });
+      await apiRequest(`/api/manual-fund-distributions/${id}`, "DELETE");
     },
     onSuccess: () => {
       toast({

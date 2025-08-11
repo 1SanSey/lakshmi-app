@@ -108,17 +108,17 @@ export default function FundDistributionModal({ isOpen, onClose }: FundDistribut
 
       // Get fund distributions for this income source
       try {
-        const distributions = await apiRequest(`/api/income-sources/${receipt.incomeSourceId}/fund-distributions`) as IncomeSourceFundDistribution[];
+        const distributions = await apiRequest(`/api/income-sources/${receipt.incomeSourceId}/fund-distributions`, "GET") as IncomeSourceFundDistribution[];
         
         for (const distribution of distributions) {
-          const distributionAmount = (receiptAmount * distribution.percentage) / 100;
+          const distributionAmount = (receiptAmount * parseFloat(distribution.percentage)) / 100;
           
           if (fundDistributionMap.has(distribution.fundId)) {
             const existing = fundDistributionMap.get(distribution.fundId)!;
             existing.amount += distributionAmount;
           } else {
             fundDistributionMap.set(distribution.fundId, {
-              percentage: distribution.percentage,
+              percentage: parseFloat(distribution.percentage),
               amount: distributionAmount
             });
           }
