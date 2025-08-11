@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit2, Trash2, TrendingUp } from "lucide-react";
+import { Plus, Search, Edit2, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import type { Fund } from "@shared/schema";
@@ -87,10 +87,7 @@ export default function Funds() {
     setEditingFund(null);
   };
 
-  // Calculate total percentage
-  const totalPercentage = funds.reduce((sum, fund) => 
-    fund.isActive ? sum + parseFloat(fund.percentage) : sum, 0
-  );
+
 
   const filteredFunds = funds.filter(fund =>
     fund.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -113,7 +110,7 @@ export default function Funds() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Управление фондами</h1>
           <p className="text-muted-foreground">
-            Управляйте своими фондами и их процентными распределениями
+            Управляйте своими фондами для распределения средств
           </p>
         </div>
         <Button 
@@ -125,37 +122,7 @@ export default function Funds() {
         </Button>
       </div>
 
-      {/* Distribution Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Сводка распределения
-          </CardTitle>
-          <CardDescription>
-            Общее размещение активных фондов: {totalPercentage.toFixed(2)}%
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {totalPercentage < 100 && (
-              <div className="text-amber-600 dark:text-amber-400 text-sm">
-                ⚠️ Предупреждение: Активные фонды размещают только {totalPercentage.toFixed(2)}% поступающих средств
-              </div>
-            )}
-            {totalPercentage > 100 && (
-              <div className="text-red-600 dark:text-red-400 text-sm">
-                ❌ Ошибка: Активные фонды превышают 100% размещения ({totalPercentage.toFixed(2)}%)
-              </div>
-            )}
-            {totalPercentage === 100 && (
-              <div className="text-green-600 dark:text-green-400 text-sm">
-                ✅ Отлично: Активные фонды размещают ровно 100% поступающих средств
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Search */}
       <div className="relative">
@@ -192,9 +159,6 @@ export default function Funds() {
                     <div className="flex items-center gap-2">
                       <Badge variant={fund.isActive ? "default" : "secondary"}>
                         {fund.isActive ? "Активен" : "Неактивен"}
-                      </Badge>
-                      <Badge variant="outline">
-                        {parseFloat(fund.percentage).toFixed(2)}%
                       </Badge>
                     </div>
                   </div>
