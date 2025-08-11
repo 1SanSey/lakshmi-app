@@ -29,12 +29,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { insertFundSchema } from "@shared/schema";
 import type { Fund } from "@shared/schema";
 
-const formSchema = insertFundSchema.extend({
-  percentage: z.string().refine((val) => {
-    const num = parseFloat(val);
-    return !isNaN(num) && num >= 0 && num <= 100;
-  }, "Percentage must be between 0 and 100"),
-});
+const formSchema = insertFundSchema;
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -53,7 +48,6 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
     defaultValues: {
       name: "",
       description: "",
-      percentage: "0",
       isActive: true,
     },
   });
@@ -63,14 +57,12 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
       form.reset({
         name: fund.name,
         description: fund.description || "",
-        percentage: fund.percentage,
         isActive: fund.isActive ?? true,
       });
     } else {
       form.reset({
         name: "",
         description: "",
-        percentage: "0",
         isActive: true,
       });
     }
@@ -164,31 +156,7 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="percentage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Процент распределения</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input 
-                        type="number" 
-                        placeholder="0"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        {...field}
-                      />
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-                        %
-                      </div>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
 
             <FormField
               control={form.control}
