@@ -160,10 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const receipt = await storage.createReceipt(receiptData, userId);
       
-      // Automatically distribute funds for this receipt based on income source
-      if (receipt.incomeSourceId) {
-        await storage.distributeFundsForReceiptByIncomeSource(receipt.id, receipt.amount, receipt.incomeSourceId, userId);
-      }
+      // Don't automatically distribute funds - let user manually distribute them
       
       res.status(201).json(receipt);
     } catch (error) {
@@ -643,6 +640,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting unallocated funds:", error);
       res.status(500).json({ error: "Ошибка при получении нераспределенных средств" });
+    }
+  });
+
+  // Automatically distribute all unallocated funds based on income sources
+  app.post("/api/distribute-unallocated-funds", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.distributeUnallocatedFunds(userId);
+      res.json({ message: "Funds distributed successfully" });
+    } catch (error) {
+      console.error("Error distributing unallocated funds:", error);
+      res.status(500).json({ error: "Ошибка при распределении средств" });
     }
   });
 

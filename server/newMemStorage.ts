@@ -436,8 +436,7 @@ export class NewMemStorage implements IStorage {
       .filter(d => d.incomeSourceId === incomeSourceId);
     
     if (incomeSourceDistributions.length === 0) {
-      // Fallback to equal distribution if no specific distributions are configured
-      await this.distributeFundsForReceipt(receiptId, amount, userId);
+      // No distribution configured for this income source
       return;
     }
     
@@ -702,6 +701,38 @@ export class NewMemStorage implements IStorage {
     balance -= transfersFrom.reduce((sum, transfer) => sum + parseFloat(transfer.amount), 0);
 
     return balance;
+  }
+
+  // Automatically distribute all unallocated funds based on income sources
+  async distributeUnallocatedFunds(userId: string): Promise<void> {
+    const unallocatedAmount = await this.getUnallocatedFunds(userId);
+    
+    if (unallocatedAmount <= 0) {
+      return; // Nothing to distribute
+    }
+
+    // Get all receipts that haven't been distributed yet
+    const userReceipts = Array.from(this.receipts.values())
+      .filter(receipt => receipt.userId === userId);
+
+    // Get receipts that don't have fund distributions yet
+    const undistributedReceipts = userReceipts.filter(receipt => {
+      const hasDistributions = Array.from(this.fundDistributions.values())
+        .some(dist => dist.receiptId === receipt.id);
+      return !hasDistributions;
+    });
+
+    // Distribute funds for each undistributed receipt
+    for (const receipt of undistributedReceipts) {
+      if (receipt.incomeSourceId) {
+        await this.distributeFundsForReceiptByIncomeSource(
+          receipt.id, 
+          parseFloat(receipt.amount), 
+          receipt.incomeSourceId, 
+          userId
+        );
+      }
+    }
   }
 }
 

@@ -53,6 +53,36 @@ export default function FundDistributions() {
     },
   });
 
+  const autoDistributeMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("/api/distribute-unallocated-funds", "POST");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Успешно",
+        description: "Нераспределённые средства автоматически распределены по фондам",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/manual-fund-distributions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/unallocated-funds"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/funds-with-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (error) => {
+      console.error("Error auto-distributing funds:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось автоматически распределить средства",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAutoDistribute = () => {
+    if (unallocatedData?.unallocatedAmount && unallocatedData.unallocatedAmount > 0) {
+      autoDistributeMutation.mutate();
+    }
+  };
+
   const formatCurrency = (amount: number | string) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('ru-RU', {
@@ -84,13 +114,23 @@ export default function FundDistributions() {
           <h1 className="text-2xl font-bold text-foreground">Распределение по фондам</h1>
           <p className="text-muted-foreground">Ручное распределение нераспределенных средств</p>
         </div>
-        <Button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-primary hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Создать распределение
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            onClick={handleAutoDistribute}
+            disabled={!unallocatedData?.unallocatedAmount || unallocatedData.unallocatedAmount <= 0 || autoDistributeMutation.isPending}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <Calculator className="h-4 w-4 mr-2" />
+            {autoDistributeMutation.isPending ? "Распределяем..." : "Автоматически распределить"}
+          </Button>
+          <Button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Создать распределение
+          </Button>
+        </div>
       </div>
 
       {/* Unallocated Funds Info */}
