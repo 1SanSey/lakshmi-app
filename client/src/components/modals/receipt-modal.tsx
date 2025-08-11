@@ -18,6 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -35,6 +44,13 @@ import { cn } from "@/lib/utils";
 interface SponsorItem {
   sponsorId: string;
   amount: string;
+}
+
+interface SponsorComboboxProps {
+  value: string;
+  onChange: (value: string) => void;
+  sponsors: Sponsor[];
+  placeholder?: string;
 }
 
 interface ReceiptModalProps {
@@ -58,7 +74,6 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
         setSelectedIncomeSourceId(receipt.incomeSourceId || "");
         setDate(new Date(receipt.date));
         setDescription(receipt.description || "");
-        // Для receipt items нужна отдельная логика
       } else {
         // Сбрасываем к начальным значениям
         setSelectedIncomeSourceId("");
@@ -69,7 +84,7 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
       }
     }
   }, [isOpen, receipt]);
-  
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -84,6 +99,24 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
     enabled: isOpen,
     retry: false,
   });
+
+  // Загружаем данные о receipt items при редактировании
+  const { data: receiptItems = [] } = useQuery({
+    queryKey: ["/api/receipts", receipt?.id, "items"],
+    enabled: isOpen && !!receipt?.id,
+    retry: false,
+  });
+
+  // Заполняем sponsor items при получении данных о receipt items
+  useEffect(() => {
+    if (receiptItems && receiptItems.length > 0) {
+      const items = receiptItems.map((item: any) => ({
+        sponsorId: item.sponsorId,
+        amount: item.amount.toString()
+      }));
+      setSponsorItems(items);
+    }
+  }, [receiptItems]);
 
   const createMutation = useMutation({
     mutationFn: async (data: {
@@ -223,6 +256,67 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
   const activeSources = incomeSources.filter(source => source.isActive);
   const activeSponsors = sponsors.filter(sponsor => sponsor.isActive);
 
+  // Поисковый компонент для выбора спонсора
+  function SponsorCombobox({ value, onChange, sponsors, placeholder = "Выберите спонсора" }: SponsorComboboxProps) {
+    const [open, setOpen] = useState(false);
+    const [searchValue, setSearchValue] = useState("");
+
+    const filteredSponsors = sponsors.filter(sponsor =>
+      sponsor.name.toLowerCase().includes(searchValue.toLowerCase())
+    );
+
+    const selectedSponsor = sponsors.find(sponsor => sponsor.id === value);
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            {selectedSponsor ? selectedSponsor.name : placeholder}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0">
+          <Command>
+            <CommandInput 
+              placeholder="Поиск спонсора..." 
+              value={searchValue}
+              onValueChange={setSearchValue}
+            />
+            <CommandList>
+              <CommandEmpty>Спонсор не найден.</CommandEmpty>
+              <CommandGroup>
+                {filteredSponsors.map((sponsor) => (
+                  <CommandItem
+                    key={sponsor.id}
+                    value={sponsor.id}
+                    onSelect={(currentValue) => {
+                      onChange(currentValue === value ? "" : currentValue);
+                      setOpen(false);
+                      setSearchValue("");
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === sponsor.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {sponsor.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -328,21 +422,12 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
                     {sponsorItems.map((item, index) => (
                       <TableRow key={index}>
                         <TableCell>
-                          <Select
+                          <SponsorCombobox
                             value={item.sponsorId}
-                            onValueChange={(value) => updateSponsorItem(index, "sponsorId", value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Выберите спонсора" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {activeSponsors.map((sponsor) => (
-                                <SelectItem key={sponsor.id} value={sponsor.id}>
-                                  {sponsor.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            onChange={(value) => updateSponsorItem(index, "sponsorId", value)}
+                            sponsors={activeSponsors}
+                            placeholder="Выберите спонсора"
+                          />
                         </TableCell>
                         <TableCell>
                           <Input
