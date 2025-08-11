@@ -172,8 +172,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/receipts/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const validatedData = insertReceiptSchema.partial().parse(req.body);
-      const receipt = await storage.updateReceipt(req.params.id, validatedData, userId);
+      
+      // Преобразуем данные для обновления поступления
+      const receiptData = {
+        ...req.body,
+        amount: req.body.amount ? parseFloat(req.body.amount).toString() : undefined,
+        date: req.body.date ? new Date(req.body.date) : undefined,
+      };
+      
+      const receipt = await storage.updateReceipt(req.params.id, receiptData, userId);
       if (!receipt) {
         return res.status(404).json({ message: "Receipt not found" });
       }
@@ -183,6 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(receipt);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error:", error.errors);
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error updating receipt:", error);
