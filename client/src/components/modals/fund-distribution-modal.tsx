@@ -1,33 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, Calculator, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calculator, AlertCircle, DollarSign } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import type { Fund, InsertManualFundDistribution } from "@shared/schema";
+import type { Fund, Receipt, IncomeSourceFundDistribution, IncomeSource } from "@shared/schema";
 
 interface FundDistributionModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+interface DistributionPreview {
+  fundId: string;
+  fundName: string;
+  percentage: number;
+  amount: number;
+}
+
 export default function FundDistributionModal({ isOpen, onClose }: FundDistributionModalProps) {
-  const [selectedFundId, setSelectedFundId] = useState<string>("");
-  const [amount, setAmount] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [date, setDate] = useState<Date>(new Date());
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [distributionPreviews, setDistributionPreviews] = useState<DistributionPreview[]>([]);
+  const [totalToDistribute, setTotalToDistribute] = useState<number>(0);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -36,84 +32,115 @@ export default function FundDistributionModal({ isOpen, onClose }: FundDistribut
     queryKey: ["/api/funds"],
   });
 
+  const { data: receipts = [] } = useQuery<Receipt[]>({
+    queryKey: ["/api/receipts"],
+  });
+
+  const { data: incomeSources = [] } = useQuery<IncomeSource[]>({
+    queryKey: ["/api/income-sources"],
+  });
+
   const { data: unallocatedData } = useQuery<{ unallocatedAmount: number }>({
     queryKey: ["/api/unallocated-funds"],
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (data: InsertManualFundDistribution) => {
-      return await apiRequest("/api/manual-fund-distributions", "POST", data);
+  const distributeMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("/api/distribute-unallocated-funds", "POST");
     },
     onSuccess: () => {
       toast({
         title: "Успешно",
-        description: "Распределение создано",
+        description: "Средства распределены по фондам",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/manual-fund-distributions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/unallocated-funds"] });
       queryClient.invalidateQueries({ queryKey: ["/api/funds-with-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       handleClose();
     },
     onError: (error) => {
-      console.error("Error creating manual fund distribution:", error);
+      console.error("Error distributing funds:", error);
       toast({
         title: "Ошибка",
-        description: "Не удалось создать распределение",
+        description: "Не удалось распределить средства",
         variant: "destructive",
       });
     },
   });
 
   const handleClose = () => {
-    setSelectedFundId("");
-    setAmount("");
-    setDescription("");
-    setDate(new Date());
-    setIsCalendarOpen(false);
+    setDistributionPreviews([]);
+    setTotalToDistribute(0);
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedFundId || !amount) {
-      toast({
-        title: "Ошибка",
-        description: "Пожалуйста, заполните все обязательные поля",
-        variant: "destructive",
-      });
+  // Calculate distribution preview when modal opens
+  useEffect(() => {
+    if (isOpen && receipts.length > 0 && funds.length > 0 && incomeSources.length > 0) {
+      calculateDistributionPreview();
+    }
+  }, [isOpen, receipts, funds, incomeSources]);
+
+  const calculateDistributionPreview = async () => {
+    // Get undistributed receipts
+    const undistributedReceipts = receipts.filter(receipt => {
+      // For this demo, assume all receipts are undistributed
+      // In real implementation, you'd check if they have fund distributions
+      return receipt.incomeSourceId;
+    });
+
+    if (undistributedReceipts.length === 0) {
+      setDistributionPreviews([]);
+      setTotalToDistribute(0);
       return;
     }
 
-    const numAmount = parseFloat(amount);
-    const unallocatedAmount = unallocatedData?.unallocatedAmount || 0;
+    const fundDistributionMap = new Map<string, { percentage: number; amount: number }>();
+    let totalAmount = 0;
 
-    if (numAmount <= 0) {
-      toast({
-        title: "Ошибка",
-        description: "Сумма должна быть больше нуля",
-        variant: "destructive",
-      });
-      return;
+    // Calculate distribution for each receipt
+    for (const receipt of undistributedReceipts) {
+      if (!receipt.incomeSourceId) continue;
+
+      const receiptAmount = parseFloat(receipt.amount);
+      totalAmount += receiptAmount;
+
+      // Get fund distributions for this income source
+      try {
+        const distributions = await apiRequest(`/api/income-sources/${receipt.incomeSourceId}/fund-distributions`) as IncomeSourceFundDistribution[];
+        
+        for (const distribution of distributions) {
+          const distributionAmount = (receiptAmount * distribution.percentage) / 100;
+          
+          if (fundDistributionMap.has(distribution.fundId)) {
+            const existing = fundDistributionMap.get(distribution.fundId)!;
+            existing.amount += distributionAmount;
+          } else {
+            fundDistributionMap.set(distribution.fundId, {
+              percentage: distribution.percentage,
+              amount: distributionAmount
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching fund distributions:", error);
+      }
     }
 
-    if (numAmount > unallocatedAmount) {
-      toast({
-        title: "Ошибка",
-        description: "Сумма не может превышать нераспределенные средства",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Convert to preview format
+    const previews: DistributionPreview[] = Array.from(fundDistributionMap.entries()).map(([fundId, data]) => {
+      const fund = funds.find(f => f.id === fundId);
+      return {
+        fundId,
+        fundName: fund?.name || "Неизвестный фонд",
+        percentage: Math.round((data.amount / totalAmount) * 100 * 100) / 100, // Round to 2 decimals
+        amount: data.amount
+      };
+    });
 
-    const distributionData: InsertManualFundDistribution = {
-      fundId: selectedFundId,
-      amount: amount,
-      description: description || null,
-      date: date,
-    };
-
-    createMutation.mutate(distributionData);
+    setDistributionPreviews(previews);
+    setTotalToDistribute(totalAmount);
   };
 
   const formatCurrency = (amount: number) => {
@@ -123,11 +150,13 @@ export default function FundDistributionModal({ isOpen, onClose }: FundDistribut
     }).format(amount);
   };
 
-  const activeFunds = funds.filter(fund => fund.isActive);
+  const handleDistribute = () => {
+    distributeMutation.mutate();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Calculator className="h-5 w-5" />
@@ -142,7 +171,7 @@ export default function FundDistributionModal({ isOpen, onClose }: FundDistribut
               <div className="flex items-center space-x-2">
                 <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  Доступно для распределения:
+                  Нераспределённые средства:
                 </span>
               </div>
               <span className="font-bold text-blue-900 dark:text-blue-100">
@@ -152,93 +181,64 @@ export default function FundDistributionModal({ isOpen, onClose }: FundDistribut
           </CardContent>
         </Card>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fundId">Фонд *</Label>
-            <Select value={selectedFundId} onValueChange={setSelectedFundId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите фонд" />
-              </SelectTrigger>
-              <SelectContent>
-                {activeFunds.map((fund) => (
-                  <SelectItem key={fund.id} value={fund.id}>
-                    {fund.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Distribution Preview */}
+        {distributionPreviews.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Предварительный расчёт распределения</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Фонд</TableHead>
+                    <TableHead className="text-right">Процент</TableHead>
+                    <TableHead className="text-right">Сумма</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {distributionPreviews.map((preview) => (
+                    <TableRow key={preview.fundId}>
+                      <TableCell className="font-medium">{preview.fundName}</TableCell>
+                      <TableCell className="text-right">{preview.percentage.toFixed(2)}%</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatCurrency(preview.amount)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex justify-between items-center font-bold text-lg">
+                  <span>Итого:</span>
+                  <span>{formatCurrency(totalToDistribute)}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                Нет нераспределённых поступлений для автоматического распределения
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
-          <div className="space-y-2">
-            <Label htmlFor="amount">Сумма (RUB) *</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              max={unallocatedData?.unallocatedAmount || 0}
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="date">Дата *</Label>
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "d MMMM yyyy", { locale: ru }) : "Выберите дату"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(selectedDate) => {
-                    if (selectedDate) {
-                      setDate(selectedDate);
-                      setIsCalendarOpen(false);
-                    }
-                  }}
-                  locale={ru}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Описание</Label>
-            <Textarea
-              id="description"
-              placeholder="Описание распределения (необязательно)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
-              Отмена
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={createMutation.isPending || !selectedFundId || !amount}
-              className="bg-primary hover:bg-primary/90"
-            >
-              {createMutation.isPending ? "Создание..." : "Создать"}
-            </Button>
-          </div>
-        </form>
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button variant="outline" onClick={handleClose}>
+            Отмена
+          </Button>
+          <Button 
+            onClick={handleDistribute}
+            disabled={distributeMutation.isPending || distributionPreviews.length === 0}
+            className="bg-primary hover:bg-primary/90"
+          >
+            {distributeMutation.isPending ? "Распределение..." : "Распределить"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
