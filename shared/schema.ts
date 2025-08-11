@@ -52,9 +52,19 @@ export const receipts = pgTable("receipts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   date: timestamp("date").notNull(),
   description: varchar("description", { length: 500 }).notNull(),
-  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-  sponsorId: varchar("sponsor_id").references(() => sponsors.id, { onDelete: "set null" }),
+  incomeSourceId: varchar("income_source_id").notNull().references(() => incomeSources.id, { onDelete: "cascade" }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Individual receipt items from specific sponsors
+export const receiptItems = pgTable("receipt_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  receiptId: varchar("receipt_id").notNull().references(() => receipts.id, { onDelete: "cascade" }),
+  sponsorId: varchar("sponsor_id").notNull().references(() => sponsors.id, { onDelete: "cascade" }),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  comment: varchar("comment", { length: 500 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -77,6 +87,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   receipts: many(receipts),
   costs: many(costs),
   funds: many(funds),
+  incomeSources: many(incomeSources),
 }));
 
 export const sponsorsRelations = relations(sponsors, ({ one, many }) => ({
@@ -84,7 +95,7 @@ export const sponsorsRelations = relations(sponsors, ({ one, many }) => ({
     fields: [sponsors.userId],
     references: [users.id],
   }),
-  receipts: many(receipts),
+  receiptItems: many(receiptItems),
 }));
 
 export const receiptsRelations = relations(receipts, ({ one, many }) => ({
@@ -92,21 +103,42 @@ export const receiptsRelations = relations(receipts, ({ one, many }) => ({
     fields: [receipts.userId],
     references: [users.id],
   }),
-  sponsor: one(sponsors, {
-    fields: [receipts.sponsorId],
-    references: [sponsors.id],
+  incomeSource: one(incomeSources, {
+    fields: [receipts.incomeSourceId],
+    references: [incomeSources.id],
   }),
+  receiptItems: many(receiptItems),
   distributions: many(fundDistributions),
 }));
 
-// Funds table - represents different funds that receive distributed money
+// Funds table - represents different funds that receive distributed money (removed percentage)
 export const funds = pgTable("funds", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 255 }).notNull(),
   description: varchar("description", { length: 500 }),
-  percentage: decimal("percentage", { precision: 5, scale: 2 }).notNull(), // e.g., 25.50 for 25.5%
   isActive: boolean("is_active").default(true),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Income sources table with custom fund distribution
+export const incomeSources = pgTable("income_sources", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: varchar("description", { length: 500 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Fund distribution for income sources
+export const incomeSourceFundDistributions = pgTable("income_source_fund_distributions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incomeSourceId: varchar("income_source_id").notNull().references(() => incomeSources.id, { onDelete: "cascade" }),
+  fundId: varchar("fund_id").notNull().references(() => funds.id, { onDelete: "cascade" }),
+  percentage: decimal("percentage", { precision: 5, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -134,6 +166,7 @@ export const fundsRelations = relations(funds, ({ one, many }) => ({
     references: [users.id],
   }),
   distributions: many(fundDistributions),
+  incomeSourceDistributions: many(incomeSourceFundDistributions),
 }));
 
 export const fundDistributionsRelations = relations(fundDistributions, ({ one }) => ({
@@ -144,6 +177,40 @@ export const fundDistributionsRelations = relations(fundDistributions, ({ one })
   fund: one(funds, {
     fields: [fundDistributions.fundId],
     references: [funds.id],
+  }),
+}));
+
+// Income sources relations
+export const incomeSourcesRelations = relations(incomeSources, ({ one, many }) => ({
+  user: one(users, {
+    fields: [incomeSources.userId],
+    references: [users.id],
+  }),
+  receipts: many(receipts),
+  fundDistributions: many(incomeSourceFundDistributions),
+}));
+
+// Income source fund distributions relations
+export const incomeSourceFundDistributionsRelations = relations(incomeSourceFundDistributions, ({ one }) => ({
+  incomeSource: one(incomeSources, {
+    fields: [incomeSourceFundDistributions.incomeSourceId],
+    references: [incomeSources.id],
+  }),
+  fund: one(funds, {
+    fields: [incomeSourceFundDistributions.fundId],
+    references: [funds.id],
+  }),
+}));
+
+// Receipt items relations
+export const receiptItemsRelations = relations(receiptItems, ({ one }) => ({
+  receipt: one(receipts, {
+    fields: [receiptItems.receiptId],
+    references: [receipts.id],
+  }),
+  sponsor: one(sponsors, {
+    fields: [receiptItems.sponsorId],
+    references: [sponsors.id],
   }),
 }));
 
@@ -181,6 +248,25 @@ export const insertFundDistributionSchema = createInsertSchema(fundDistributions
   createdAt: true,
 });
 
+export const insertIncomeSourceSchema = createInsertSchema(incomeSources).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertIncomeSourceFundDistributionSchema = createInsertSchema(incomeSourceFundDistributions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertReceiptItemSchema = createInsertSchema(receiptItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -194,3 +280,9 @@ export type Fund = typeof funds.$inferSelect;
 export type InsertFund = z.infer<typeof insertFundSchema>;
 export type FundDistribution = typeof fundDistributions.$inferSelect;
 export type InsertFundDistribution = z.infer<typeof insertFundDistributionSchema>;
+export type IncomeSource = typeof incomeSources.$inferSelect;
+export type InsertIncomeSource = z.infer<typeof insertIncomeSourceSchema>;
+export type IncomeSourceFundDistribution = typeof incomeSourceFundDistributions.$inferSelect;
+export type InsertIncomeSourceFundDistribution = z.infer<typeof insertIncomeSourceFundDistributionSchema>;
+export type ReceiptItem = typeof receiptItems.$inferSelect;
+export type InsertReceiptItem = z.infer<typeof insertReceiptItemSchema>;

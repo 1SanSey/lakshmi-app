@@ -1,9 +1,10 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { BarChart3, Handshake, Receipt, CreditCard, PiggyBank } from "lucide-react";
+import { BarChart3, Handshake, Receipt, CreditCard, PiggyBank, TrendingUp } from "lucide-react";
 
 const navigation = [
   { name: "Панель управления", href: "/", icon: BarChart3 },
+  { name: "Источники поступлений", href: "/income-sources", icon: TrendingUp },
   { name: "Спонсоры", href: "/sponsors", icon: Handshake },
   { name: "Поступления", href: "/receipts", icon: Receipt },
   { name: "Расходы", href: "/costs", icon: CreditCard },

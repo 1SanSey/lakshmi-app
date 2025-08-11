@@ -2,21 +2,30 @@ import {
   users,
   sponsors,
   receipts,
+  receiptItems,
   costs,
   funds,
   fundDistributions,
+  incomeSources,
+  incomeSourceFundDistributions,
   type User,
   type UpsertUser,
   type Sponsor,
   type InsertSponsor,
   type Receipt,
   type InsertReceipt,
+  type ReceiptItem,
+  type InsertReceiptItem,
   type Cost,
   type InsertCost,
   type Fund,
   type InsertFund,
   type FundDistribution,
   type InsertFundDistribution,
+  type IncomeSource,
+  type InsertIncomeSource,
+  type IncomeSourceFundDistribution,
+  type InsertIncomeSourceFundDistribution,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, ilike, gte, lte, count, sum } from "drizzle-orm";
@@ -73,6 +82,23 @@ export interface IStorage {
   // Fund distribution operations
   createFundDistribution(distribution: InsertFundDistribution): Promise<FundDistribution>;
   getFundDistributionsByReceipt(receiptId: string): Promise<(FundDistribution & { fundName: string })[]>;
+
+  // Income source operations
+  getIncomeSources(userId: string): Promise<IncomeSource[]>;
+  createIncomeSource(incomeSource: InsertIncomeSource, userId: string): Promise<IncomeSource>;
+  updateIncomeSource(id: string, incomeSource: Partial<InsertIncomeSource>, userId: string): Promise<IncomeSource | undefined>;
+  deleteIncomeSource(id: string, userId: string): Promise<boolean>;
+  getIncomeSource(id: string, userId: string): Promise<IncomeSource | undefined>;
+
+  // Income source fund distribution operations
+  createIncomeSourceFundDistribution(distribution: InsertIncomeSourceFundDistribution): Promise<IncomeSourceFundDistribution>;
+  getIncomeSourceFundDistributions(incomeSourceId: string): Promise<(IncomeSourceFundDistribution & { fundName: string })[]>;
+  deleteIncomeSourceFundDistributions(incomeSourceId: string): Promise<boolean>;
+
+  // Receipt item operations
+  createReceiptItem(receiptItem: InsertReceiptItem): Promise<ReceiptItem>;
+  getReceiptItems(receiptId: string): Promise<(ReceiptItem & { sponsorName: string })[]>;
+  deleteReceiptItems(receiptId: string): Promise<boolean>;
   deleteFundDistributionsByReceipt(receiptId: string): Promise<void>;
   distributeFundsForReceipt(receiptId: string, receiptAmount: string, userId: string): Promise<void>;
 }
@@ -475,6 +501,6 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Temporary use memory storage due to database connectivity issues
-import { memStorage } from "./memStorage";
-export const storage = memStorage;
+// Use new memory storage with updated architecture
+import { newMemStorage } from "./newMemStorage";
+export const storage = newMemStorage;
