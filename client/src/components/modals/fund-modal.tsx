@@ -81,24 +81,22 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
       const endpoint = fund ? `/api/funds/${fund.id}` : "/api/funds";
       const method = fund ? "PUT" : "POST";
       
-      return await apiRequest(method, endpoint, {
-        ...data,
-        percentage: data.percentage,
-      });
+      return await apiRequest(method, endpoint, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/funds"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/funds-with-balances"] });
       toast({
-        title: "Success",
-        description: fund ? "Fund updated successfully!" : "Fund created successfully!",
+        title: "Успешно",
+        description: fund ? "Фонд обновлен!" : "Фонд создан!",
       });
       onClose();
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
+      if (isUnauthorizedError(error as Error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: "Неавторизован",
+          description: "Вы вышли из системы. Выполняется повторный вход...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -107,8 +105,8 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
         return;
       }
       toast({
-        title: "Error",
-        description: fund ? "Failed to update fund" : "Failed to create fund",
+        title: "Ошибка",
+        description: fund ? "Не удалось обновить фонд" : "Не удалось создать фонд",
         variant: "destructive",
       });
     },
