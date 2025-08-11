@@ -42,7 +42,7 @@ export default function Funds() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest(`/api/funds/${id}`, "DELETE");
+      await apiRequest("DELETE", `/api/funds/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/funds"] });

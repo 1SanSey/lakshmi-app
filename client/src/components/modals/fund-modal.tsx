@@ -81,7 +81,7 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
       const endpoint = fund ? `/api/funds/${fund.id}` : "/api/funds";
       const method = fund ? "PUT" : "POST";
       
-      return await apiRequest(endpoint, method, {
+      return await apiRequest(method, endpoint, {
         ...data,
         percentage: data.percentage,
       });
