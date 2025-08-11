@@ -10,7 +10,8 @@ import {
   insertFundTransferSchema,
   insertIncomeSourceSchema,
   insertIncomeSourceFundDistributionSchema,
-  insertReceiptItemSchema
+  insertReceiptItemSchema,
+  insertManualFundDistributionSchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -554,6 +555,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting fund transfer:", error);
       res.status(500).json({ message: "Failed to delete fund transfer" });
+    }
+  });
+
+  // Manual fund distribution routes
+  app.get("/api/manual-fund-distributions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const distributions = await storage.getManualFundDistributions(userId);
+      res.json(distributions);
+    } catch (error) {
+      console.error("Error fetching manual fund distributions:", error);
+      res.status(500).json({ error: "Ошибка при получении ручных распределений" });
+    }
+  });
+
+  app.post("/api/manual-fund-distributions", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertManualFundDistributionSchema.parse(req.body);
+      const distribution = await storage.createManualFundDistribution(validatedData, userId);
+      res.status(201).json(distribution);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating manual fund distribution:", error);
+      res.status(500).json({ error: "Ошибка при создании ручного распределения" });
+    }
+  });
+
+  app.delete("/api/manual-fund-distributions/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const success = await storage.deleteManualFundDistribution(req.params.id, userId);
+      if (success) {
+        res.json({ message: "Ручное распределение удалено" });
+      } else {
+        res.status(404).json({ error: "Распределение не найдено" });
+      }
+    } catch (error) {
+      console.error("Error deleting manual fund distribution:", error);
+      res.status(500).json({ error: "Ошибка при удалении ручного распределения" });
+    }
+  });
+
+  app.get("/api/unallocated-funds", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const unallocatedAmount = await storage.getUnallocatedFunds(userId);
+      res.json({ unallocatedAmount });
+    } catch (error) {
+      console.error("Error getting unallocated funds:", error);
+      res.status(500).json({ error: "Ошибка при получении нераспределенных средств" });
     }
   });
 

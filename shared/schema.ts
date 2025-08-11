@@ -165,6 +165,18 @@ export const fundTransfers = pgTable("fund_transfers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Manual fund distributions table - for distributing unallocated funds manually
+export const manualFundDistributions = pgTable("manual_fund_distributions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  fundId: varchar("fund_id").notNull().references(() => funds.id, { onDelete: "cascade" }),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  percentage: decimal("percentage", { precision: 5, scale: 2 }),
+  description: varchar("description", { length: 500 }),
+  date: timestamp("date").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const costsRelations = relations(costs, ({ one }) => ({
   user: one(users, {
     fields: [costs.userId],
@@ -181,6 +193,7 @@ export const fundsRelations = relations(funds, ({ one, many }) => ({
   incomeSourceDistributions: many(incomeSourceFundDistributions),
   transfersFrom: many(fundTransfers, { relationName: "fromFund" }),
   transfersTo: many(fundTransfers, { relationName: "toFund" }),
+  manualDistributions: many(manualFundDistributions),
 }));
 
 export const fundDistributionsRelations = relations(fundDistributions, ({ one }) => ({
@@ -246,6 +259,18 @@ export const fundTransfersRelations = relations(fundTransfers, ({ one }) => ({
   }),
 }));
 
+// Manual fund distributions relations
+export const manualFundDistributionsRelations = relations(manualFundDistributions, ({ one }) => ({
+  fund: one(funds, {
+    fields: [manualFundDistributions.fundId],
+    references: [funds.id],
+  }),
+  user: one(users, {
+    fields: [manualFundDistributions.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertSponsorSchema = createInsertSchema(sponsors).omit({
   id: true,
@@ -305,6 +330,12 @@ export const insertFundTransferSchema = createInsertSchema(fundTransfers).omit({
   createdAt: true,
 });
 
+export const insertManualFundDistributionSchema = createInsertSchema(manualFundDistributions).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -326,3 +357,5 @@ export type ReceiptItem = typeof receiptItems.$inferSelect;
 export type InsertReceiptItem = z.infer<typeof insertReceiptItemSchema>;
 export type FundTransfer = typeof fundTransfers.$inferSelect;
 export type InsertFundTransfer = z.infer<typeof insertFundTransferSchema>;
+export type ManualFundDistribution = typeof manualFundDistributions.$inferSelect;
+export type InsertManualFundDistribution = z.infer<typeof insertManualFundDistributionSchema>;

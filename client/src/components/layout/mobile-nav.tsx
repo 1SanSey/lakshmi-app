@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { BarChart3, Handshake, Receipt, CreditCard, PiggyBank, TrendingUp, ArrowLeftRight } from "lucide-react";
+import { BarChart3, Handshake, Receipt, CreditCard, PiggyBank, TrendingUp, ArrowLeftRight, Calculator } from "lucide-react";
 
 const navigation = [
   { name: "Обзор", href: "/", icon: BarChart3 },
@@ -10,6 +10,7 @@ const navigation = [
   { name: "Расходы", href: "/costs", icon: CreditCard },
   { name: "Фонды", href: "/funds", icon: PiggyBank },
   { name: "Переводы", href: "/fund-transfers", icon: ArrowLeftRight },
+  { name: "Распределение", href: "/fund-distributions", icon: Calculator },
 ];
 
 export default function MobileNav() {

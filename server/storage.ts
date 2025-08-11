@@ -9,6 +9,7 @@ import {
   fundTransfers,
   incomeSources,
   incomeSourceFundDistributions,
+  manualFundDistributions,
   type User,
   type UpsertUser,
   type Sponsor,
@@ -29,6 +30,8 @@ import {
   type InsertIncomeSource,
   type IncomeSourceFundDistribution,
   type InsertIncomeSourceFundDistribution,
+  type ManualFundDistribution,
+  type InsertManualFundDistribution,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, ilike, gte, lte, count, sum } from "drizzle-orm";
@@ -113,6 +116,13 @@ export interface IStorage {
   // Fund balance operations
   getFundBalance(fundId: string): Promise<number>;
   getFundsWithBalances(userId: string): Promise<(Fund & { balance: number })[]>;
+
+  // Manual fund distribution operations
+  getManualFundDistributions(userId: string): Promise<ManualFundDistribution[]>;
+  createManualFundDistribution(distribution: InsertManualFundDistribution, userId: string): Promise<ManualFundDistribution>;
+  deleteManualFundDistribution(id: string, userId: string): Promise<boolean>;
+  getUnallocatedFunds(userId: string): Promise<number>;
+  getFundBalanceDetailed(fundId: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {

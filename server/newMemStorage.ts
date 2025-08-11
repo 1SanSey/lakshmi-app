@@ -19,7 +19,9 @@ import {
   type IncomeSource,
   type InsertIncomeSource,
   type IncomeSourceFundDistribution,
-  type InsertIncomeSourceFundDistribution
+  type InsertIncomeSourceFundDistribution,
+  type ManualFundDistribution,
+  type InsertManualFundDistribution
 } from "@shared/schema";
 
 export class NewMemStorage implements IStorage {
@@ -33,6 +35,7 @@ export class NewMemStorage implements IStorage {
   private fundTransfers: Map<string, FundTransfer> = new Map();
   private incomeSources: Map<string, IncomeSource> = new Map();
   private incomeSourceFundDistributions: Map<string, IncomeSourceFundDistribution> = new Map();
+  private manualFundDistributions: Map<string, ManualFundDistribution> = new Map();
 
   // User operations
   async getUser(id: string): Promise<User | undefined> {
@@ -268,6 +271,7 @@ export class NewMemStorage implements IStorage {
       userId,
       name: fund.name,
       description: fund.description || null,
+      initialBalance: fund.initialBalance || "0",
       isActive: fund.isActive ?? true,
       createdAt: now,
       updatedAt: now,
@@ -581,6 +585,88 @@ export class NewMemStorage implements IStorage {
     );
 
     return fundsWithBalances;
+  }
+
+  // Manual fund distributions operations
+  async getManualFundDistributions(userId: string): Promise<ManualFundDistribution[]> {
+    return Array.from(this.manualFundDistributions.values())
+      .filter(dist => dist.userId === userId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async createManualFundDistribution(distribution: InsertManualFundDistribution, userId: string): Promise<ManualFundDistribution> {
+    const id = `manual_dist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const now = new Date();
+    const newDistribution: ManualFundDistribution = {
+      id,
+      fundId: distribution.fundId,
+      amount: distribution.amount,
+      percentage: distribution.percentage || null,
+      description: distribution.description || null,
+      date: distribution.date,
+      userId,
+      createdAt: now,
+    };
+    this.manualFundDistributions.set(id, newDistribution);
+    return newDistribution;
+  }
+
+  async deleteManualFundDistribution(id: string, userId: string): Promise<boolean> {
+    const distribution = this.manualFundDistributions.get(id);
+    if (distribution && distribution.userId === userId) {
+      this.manualFundDistributions.delete(id);
+      return true;
+    }
+    return false;
+  }
+
+  // Calculate total unallocated funds
+  async getUnallocatedFunds(userId: string): Promise<number> {
+    // Get total receipts
+    const userReceipts = Array.from(this.receipts.values())
+      .filter(receipt => receipt.userId === userId);
+    const totalReceipts = userReceipts.reduce((sum, receipt) => sum + parseFloat(receipt.amount), 0);
+
+    // Get total distributed through income sources
+    const totalDistributed = Array.from(this.fundDistributions.values())
+      .reduce((sum, dist) => sum + parseFloat(dist.amount), 0);
+
+    // Get total manually distributed
+    const totalManuallyDistributed = Array.from(this.manualFundDistributions.values())
+      .filter(dist => dist.userId === userId)
+      .reduce((sum, dist) => sum + parseFloat(dist.amount), 0);
+
+    return totalReceipts - totalDistributed - totalManuallyDistributed;
+  }
+
+  // Get detailed fund balance including manual distributions
+  async getFundBalanceDetailed(fundId: string): Promise<number> {
+    const fund = this.funds.get(fundId);
+    if (!fund) return 0;
+
+    let balance = parseFloat(fund.initialBalance || "0");
+
+    // Add money from automatic fund distributions (receipts)
+    const distributions = Array.from(this.fundDistributions.values())
+      .filter(dist => dist.fundId === fundId);
+    balance += distributions.reduce((sum, dist) => sum + parseFloat(dist.amount), 0);
+
+    // Add money from manual distributions
+    const manualDistributions = Array.from(this.manualFundDistributions.values())
+      .filter(dist => dist.fundId === fundId);
+    balance += manualDistributions.reduce((sum, dist) => sum + parseFloat(dist.amount), 0);
+
+    // Add money transferred TO this fund
+    const transfersTo = Array.from(this.fundTransfers.values())
+      .filter(transfer => transfer.toFundId === fundId);
+    balance += transfersTo.reduce((sum, transfer) => sum + parseFloat(transfer.amount), 0);
+
+    // Subtract money transferred FROM this fund
+    const transfersFrom = Array.from(this.fundTransfers.values())
+      .filter(transfer => transfer.fromFundId === fundId);
+    balance -= transfersFrom.reduce((sum, transfer) => sum + parseFloat(transfer.amount), 0);
+
+    return balance;
   }
 }
 
