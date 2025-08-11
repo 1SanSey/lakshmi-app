@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Calculator, Info, Eye, Calendar, Clock } from "lucide-react";
+import { Plus, Trash2, Calculator, Info, Eye, Calendar, Clock, CalendarDays, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
@@ -13,6 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import FundDistributionModal from "@/components/modals/fund-distribution-modal";
 import type { ManualFundDistribution, Fund } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -39,6 +46,9 @@ export default function FundDistributions() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDistribution, setSelectedDistribution] = useState<DistributionHistory | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [showDateFilter, setShowDateFilter] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -57,6 +67,25 @@ export default function FundDistributions() {
   const { data: distributionHistory = [], isLoading: historyLoading } = useQuery<DistributionHistory[]>({
     queryKey: ["/api/distribution-history"],
   });
+
+  // Filter distribution history by date range
+  const filteredDistributionHistory = distributionHistory.filter((distribution) => {
+    if (!dateFrom && !dateTo) return true;
+    
+    const distributionDate = new Date(distribution.distributionDate);
+    const fromDate = dateFrom ? new Date(dateFrom) : null;
+    const toDate = dateTo ? new Date(dateTo + "T23:59:59") : null;
+    
+    if (fromDate && distributionDate < fromDate) return false;
+    if (toDate && distributionDate > toDate) return false;
+    
+    return true;
+  });
+
+  const clearDateFilter = () => {
+    setDateFrom("");
+    setDateTo("");
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -174,9 +203,6 @@ export default function FundDistributions() {
           <div className="flex items-center gap-2">
             <Calculator className="w-5 h-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Ручные распределения</h2>
-            <Badge variant="outline" className="text-sm">
-              {distributions.length}
-            </Badge>
           </div>
           {distributions.map((distribution) => (
             <Card key={distribution.id} className="financial-card">
@@ -220,30 +246,123 @@ export default function FundDistributions() {
 
       {/* История распределений */}
       <div className="space-y-4">
-        {distributionHistory.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                История пуста
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Автоматические распределения пока не выполнялись.
-                <br />
-                Создайте поступления с источниками доходов для автоматического распределения.
-              </p>
-            </CardContent>
-          </Card>
+        {filteredDistributionHistory.length === 0 ? (
+          distributionHistory.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  История пуста
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Автоматические распределения пока не выполнялись.
+                  <br />
+                  Создайте поступления с источниками доходов для автоматического распределения.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Нет данных за выбранный период
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  В указанном диапазоне дат распределения не найдены.
+                  <br />
+                  Попробуйте изменить фильтр или сбросить его.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={clearDateFilter}
+                >
+                  Сбросить фильтр
+                </Button>
+              </CardContent>
+            </Card>
+          )
         ) : (
           <>
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">История распределений</h2>
-              <Badge variant="outline" className="text-sm">
-                {distributionHistory.length}
-              </Badge>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">История распределений</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                {(dateFrom || dateTo) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearDateFilter}
+                    className="text-xs"
+                  >
+                    Сбросить фильтр
+                  </Button>
+                )}
+                <Popover open={showDateFilter} onOpenChange={setShowDateFilter}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <Filter className="w-4 h-4" />
+                      {(dateFrom || dateTo) ? "Фильтр активен" : "Фильтр по дате"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Фильтр по периоду</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Выберите диапазон дат для фильтрации истории распределений
+                        </p>
+                      </div>
+                      <div className="grid gap-2">
+                        <div className="grid grid-cols-3 items-center gap-4">
+                          <Label htmlFor="dateFrom">От:</Label>
+                          <Input
+                            id="dateFrom"
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="col-span-2 h-8"
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 items-center gap-4">
+                          <Label htmlFor="dateTo">До:</Label>
+                          <Input
+                            id="dateTo"
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="col-span-2 h-8"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => setShowDateFilter(false)}
+                          className="flex-1"
+                        >
+                          Применить
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            clearDateFilter();
+                            setShowDateFilter(false);
+                          }}
+                          className="flex-1"
+                        >
+                          Сбросить
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
-          {distributionHistory.map((distribution) => (
+          {filteredDistributionHistory.map((distribution) => (
             <Card key={distribution.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
