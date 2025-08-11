@@ -27,9 +27,7 @@ function IncomeSources() {
 
   const deleteIncomeSourceMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest(`/api/income-sources/${id}`, {
-        method: "DELETE",
-      });
+      await apiRequest("DELETE", `/api/income-sources/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/income-sources"] });

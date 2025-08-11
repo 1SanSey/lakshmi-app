@@ -68,10 +68,7 @@ export function IncomeSourceModal({ incomeSource, isOpen, onClose }: IncomeSourc
 
   const createMutation = useMutation({
     mutationFn: async (data: IncomeSourceFormData) => {
-      return await apiRequest("/api/income-sources", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("POST", "/api/income-sources", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/income-sources"] });
@@ -92,10 +89,7 @@ export function IncomeSourceModal({ incomeSource, isOpen, onClose }: IncomeSourc
 
   const updateMutation = useMutation({
     mutationFn: async (data: IncomeSourceFormData) => {
-      return await apiRequest(`/api/income-sources/${incomeSource!.id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("PUT", `/api/income-sources/${incomeSource!.id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/income-sources"] });
