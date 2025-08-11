@@ -475,4 +475,6 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Temporary use memory storage due to database connectivity issues
+import { memStorage } from "./memStorage";
+export const storage = memStorage;
