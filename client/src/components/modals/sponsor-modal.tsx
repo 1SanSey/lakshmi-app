@@ -32,12 +32,12 @@ const formSchema = insertSponsorSchema.extend({
 type FormData = z.infer<typeof formSchema>;
 
 interface SponsorModalProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
   sponsor?: Sponsor | null;
 }
 
-export default function SponsorModal({ isOpen, onClose, sponsor }: SponsorModalProps) {
+export default function SponsorModal({ open, onClose, sponsor }: SponsorModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -85,20 +85,22 @@ export default function SponsorModal({ isOpen, onClose, sponsor }: SponsorModalP
   });
 
   useEffect(() => {
-    if (sponsor) {
-      form.reset({
-        name: sponsor.name,
-        phone: sponsor.phone,
-        isActive: sponsor.isActive ?? true,
-      });
-    } else {
-      form.reset({
-        name: "",
-        phone: "",
-        isActive: true,
-      });
+    if (open) {
+      if (sponsor) {
+        form.reset({
+          name: sponsor.name,
+          phone: sponsor.phone,
+          isActive: sponsor.isActive ?? true,
+        });
+      } else {
+        form.reset({
+          name: "",
+          phone: "",
+          isActive: true,
+        });
+      }
     }
-  }, [sponsor, form]);
+  }, [sponsor, form, open]);
 
   const onSubmit = (data: FormData) => {
     mutation.mutate(data);
@@ -110,7 +112,7 @@ export default function SponsorModal({ isOpen, onClose, sponsor }: SponsorModalP
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{sponsor ? "Редактировать спонсора" : "Добавить спонсора"}</DialogTitle>

@@ -59,22 +59,24 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
   });
 
   useEffect(() => {
-    if (fund) {
-      form.reset({
-        name: fund.name,
-        description: fund.description || "",
-        initialBalance: fund.initialBalance || "0",
-        isActive: fund.isActive ?? true,
-      });
-    } else {
-      form.reset({
-        name: "",
-        description: "",
-        initialBalance: "0",
-        isActive: true,
-      });
+    if (open) {
+      if (fund) {
+        form.reset({
+          name: fund.name,
+          description: fund.description || "",
+          initialBalance: fund.initialBalance || "0",
+          isActive: fund.isActive ?? true,
+        });
+      } else {
+        form.reset({
+          name: "",
+          description: "",
+          initialBalance: "0",
+          isActive: true,
+        });
+      }
     }
-  }, [fund, form]);
+  }, [fund, form, open]);
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {

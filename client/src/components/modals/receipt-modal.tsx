@@ -49,6 +49,26 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
   const [description, setDescription] = useState<string>("");
   const [sponsorItems, setSponsorItems] = useState<SponsorItem[]>([{ sponsorId: "", amount: "" }]);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  // Сбрасываем все состояния при открытии модального окна
+  useEffect(() => {
+    if (isOpen) {
+      if (receipt) {
+        // Заполняем данными для редактирования
+        setSelectedIncomeSourceId(receipt.incomeSourceId || "");
+        setDate(new Date(receipt.date));
+        setDescription(receipt.description || "");
+        // Для receipt items нужна отдельная логика
+      } else {
+        // Сбрасываем к начальным значениям
+        setSelectedIncomeSourceId("");
+        setDate(new Date());
+        setDescription("");
+        setSponsorItems([{ sponsorId: "", amount: "" }]);
+        setIsCalendarOpen(false);
+      }
+    }
+  }, [isOpen, receipt]);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -82,12 +102,13 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
         amount: totalAmount.toString(),
       };
       
-      const newReceipt = await apiRequest("/api/receipts", "POST", receiptData);
+      const response = await apiRequest("POST", "/api/receipts", receiptData);
+      const newReceipt = await response.json();
       
       // Create receipt items for each sponsor
       for (const item of data.sponsorItems) {
         if (item.sponsorId && item.amount && parseFloat(item.amount) > 0) {
-          await apiRequest(`/api/receipts/${newReceipt.id}/items`, "POST", {
+          await apiRequest("POST", `/api/receipts/${newReceipt.id}/items`, {
             sponsorId: item.sponsorId,
             amount: parseFloat(item.amount),
           });

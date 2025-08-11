@@ -51,20 +51,22 @@ export function IncomeSourceModal({ incomeSource, isOpen, onClose }: IncomeSourc
   });
 
   useEffect(() => {
-    if (incomeSource) {
-      form.reset({
-        name: incomeSource.name,
-        description: incomeSource.description || "",
-        isActive: incomeSource.isActive,
-      });
-    } else {
-      form.reset({
-        name: "",
-        description: "",
-        isActive: true,
-      });
+    if (isOpen) {
+      if (incomeSource) {
+        form.reset({
+          name: incomeSource.name,
+          description: incomeSource.description || "",
+          isActive: incomeSource.isActive,
+        });
+      } else {
+        form.reset({
+          name: "",
+          description: "",
+          isActive: true,
+        });
+      }
     }
-  }, [incomeSource, form]);
+  }, [incomeSource, form, isOpen]);
 
   const createMutation = useMutation({
     mutationFn: async (data: IncomeSourceFormData) => {
@@ -151,7 +153,11 @@ export function IncomeSourceModal({ incomeSource, isOpen, onClose }: IncomeSourc
                   <FormControl>
                     <Textarea
                       placeholder="Введите описание источника (необязательно)"
-                      {...field}
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
                     />
                   </FormControl>
                   <FormMessage />
@@ -171,7 +177,7 @@ export function IncomeSourceModal({ incomeSource, isOpen, onClose }: IncomeSourc
                     </div>
                   </div>
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}

@@ -69,6 +69,26 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
     },
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      if (cost) {
+        form.reset({
+          date: cost.date.toISOString().split('T')[0],
+          description: cost.description,
+          amount: cost.amount.toString(),
+          category: cost.category,
+        });
+      } else {
+        form.reset({
+          date: new Date().toISOString().split('T')[0],
+          description: "",
+          amount: "",
+          category: "",
+        });
+      }
+    }
+  }, [cost, form, isOpen]);
+
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
       const submitData = {
