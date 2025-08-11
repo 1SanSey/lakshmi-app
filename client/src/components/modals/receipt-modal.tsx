@@ -109,7 +109,7 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
 
   // Заполняем sponsor items при получении данных о receipt items
   useEffect(() => {
-    if (receiptItems && receiptItems.length > 0) {
+    if (Array.isArray(receiptItems) && receiptItems.length > 0) {
       const items = receiptItems.map((item: any) => ({
         sponsorId: item.sponsorId,
         amount: item.amount.toString()
@@ -293,9 +293,9 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
                 {filteredSponsors.map((sponsor) => (
                   <CommandItem
                     key={sponsor.id}
-                    value={sponsor.id}
-                    onSelect={(currentValue) => {
-                      onChange(currentValue === value ? "" : currentValue);
+                    value={sponsor.name}
+                    onSelect={() => {
+                      onChange(sponsor.id);
                       setOpen(false);
                       setSearchValue("");
                     }}
