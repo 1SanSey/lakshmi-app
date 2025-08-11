@@ -37,6 +37,8 @@ export default function FundTransfers() {
   const { data: transfers = [], isLoading: transfersLoading } = useQuery<(FundTransfer & { fromFundName: string; toFundName: string })[]>({
     queryKey: ["/api/fund-transfers"],
     retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 0,
   });
 
   const { data: funds = [] } = useQuery<Fund[]>({
@@ -46,7 +48,7 @@ export default function FundTransfers() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/fund-transfers/${id}`);
+      await apiRequest(`/api/fund-transfers/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/fund-transfers"] });

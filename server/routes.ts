@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { newMemStorage as storage } from "./newMemStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   insertSponsorSchema, 
@@ -552,16 +552,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/fund-transfers", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const validatedData = insertFundTransferSchema.parse({
+      const transferData = {
         ...req.body,
+        amount: parseFloat(req.body.amount),
         userId
-      });
-      const transfer = await storage.createFundTransfer(validatedData);
+      };
+      const transfer = await storage.createFundTransfer(transferData);
       res.status(201).json(transfer);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
       console.error("Error creating fund transfer:", error);
       res.status(500).json({ message: "Failed to create fund transfer" });
     }

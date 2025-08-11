@@ -62,6 +62,14 @@ Preferred communication style: Simple, everyday language.
 - **Development Tools**: Hot module replacement, runtime error overlay, and development banner integration
 
 ## Recent Changes (August 2025)
+
+- **Fund Transfer Issue Fix**: Исправлена проблема с отображением переводов между фондами
+  - Переключились на использование newMemStorage вместо старого storage
+  - Обновлены API endpoints для корректной работы с новой архитектурой
+  - Исправлены методы создания и получения переводов между фондами
+  - Переводы теперь корректно сохраняются и отображаются в интерфейсе
+
+## Previous Changes
 - **Income Sources Architecture**: Completed major database restructuring for income sources with fund distribution
   - Removed percentage field from funds table as requested by user
   - Created income_sources table for managing income source types
