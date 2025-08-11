@@ -108,7 +108,8 @@ export default function FundDistributionModal({ isOpen, onClose }: FundDistribut
 
       // Get fund distributions for this income source
       try {
-        const distributions = await apiRequest(`/api/income-sources/${receipt.incomeSourceId}/fund-distributions`, "GET") as IncomeSourceFundDistribution[];
+        const response = await apiRequest(`/api/income-sources/${receipt.incomeSourceId}/fund-distributions`, "GET");
+        const distributions = await response.json() as IncomeSourceFundDistribution[];
         
         for (const distribution of distributions) {
           const distributionAmount = (receiptAmount * parseFloat(distribution.percentage)) / 100;
