@@ -677,6 +677,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Distribution History endpoints
+  app.get("/api/distribution-history", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const history = await storage.getDistributionHistoryWithItems(userId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching distribution history:", error);
+      res.status(500).json({ message: "Failed to fetch distribution history" });
+    }
+  });
+
+  app.get("/api/distribution-history/:id", skipAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      const history = await storage.getDistributionHistoryById(id, userId);
+      if (history) {
+        res.json(history);
+      } else {
+        res.status(404).json({ message: "Distribution history not found" });
+      }
+    } catch (error) {
+      console.error("Error fetching distribution history:", error);
+      res.status(500).json({ message: "Failed to fetch distribution history" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

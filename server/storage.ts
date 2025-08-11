@@ -123,6 +123,15 @@ export interface IStorage {
   deleteManualFundDistribution(id: string, userId: string): Promise<boolean>;
   getUnallocatedFunds(userId: string): Promise<number>;
   getFundBalanceDetailed(fundId: string): Promise<number>;
+  
+  // Distribution History operations
+  getDistributionHistory(userId: string): Promise<any[]>;
+  getDistributionHistoryWithItems(userId: string): Promise<any[]>;
+  getDistributionHistoryById(id: string, userId: string): Promise<any | undefined>;
+  
+  // Distribution functions
+  distributeUnallocatedFunds(userId: string): Promise<void>;
+  distributeFundsForReceiptByIncomeSource(receiptId: string, receiptAmount: number, incomeSourceId: string, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

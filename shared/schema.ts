@@ -360,3 +360,57 @@ export type FundTransfer = typeof fundTransfers.$inferSelect;
 export type InsertFundTransfer = z.infer<typeof insertFundTransferSchema>;
 export type ManualFundDistribution = typeof manualFundDistributions.$inferSelect;
 export type InsertManualFundDistribution = z.infer<typeof insertManualFundDistributionSchema>;
+
+// Distribution History table - tracks all fund distributions
+export const distributionHistory = pgTable("distribution_history", {
+  id: varchar("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  distributionDate: timestamp("distribution_date").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Distribution History Items - individual distributions within a batch
+export const distributionHistoryItems = pgTable("distribution_history_items", {
+  id: varchar("id").primaryKey(),
+  distributionId: varchar("distribution_id").notNull().references(() => distributionHistory.id, { onDelete: 'cascade' }),
+  fundId: varchar("fund_id").notNull().references(() => funds.id, { onDelete: 'cascade' }),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  percentage: decimal("percentage", { precision: 5, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const distributionHistoryRelations = relations(distributionHistory, ({ one, many }) => ({
+  user: one(users, {
+    fields: [distributionHistory.userId],
+    references: [users.id],
+  }),
+  items: many(distributionHistoryItems),
+}));
+
+export const distributionHistoryItemsRelations = relations(distributionHistoryItems, ({ one }) => ({
+  distribution: one(distributionHistory, {
+    fields: [distributionHistoryItems.distributionId],
+    references: [distributionHistory.id],
+  }),
+  fund: one(funds, {
+    fields: [distributionHistoryItems.fundId],
+    references: [funds.id],
+  }),
+}));
+
+export const insertDistributionHistorySchema = createInsertSchema(distributionHistory).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+});
+
+export const insertDistributionHistoryItemSchema = createInsertSchema(distributionHistoryItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type DistributionHistory = typeof distributionHistory.$inferSelect;
+export type InsertDistributionHistory = z.infer<typeof insertDistributionHistorySchema>;
+export type DistributionHistoryItem = typeof distributionHistoryItems.$inferSelect;
+export type InsertDistributionHistoryItem = z.infer<typeof insertDistributionHistoryItemSchema>;

@@ -21,7 +21,11 @@ import {
   type IncomeSourceFundDistribution,
   type InsertIncomeSourceFundDistribution,
   type ManualFundDistribution,
-  type InsertManualFundDistribution
+  type InsertManualFundDistribution,
+  type DistributionHistory,
+  type InsertDistributionHistory,
+  type DistributionHistoryItem,
+  type InsertDistributionHistoryItem
 } from "@shared/schema";
 
 export class NewMemStorage implements IStorage {
@@ -36,6 +40,8 @@ export class NewMemStorage implements IStorage {
   private incomeSources: Map<string, IncomeSource> = new Map();
   private incomeSourceFundDistributions: Map<string, IncomeSourceFundDistribution> = new Map();
   private manualFundDistributions: Map<string, ManualFundDistribution> = new Map();
+  private distributionHistory: Map<string, DistributionHistory> = new Map();
+  private distributionHistoryItems: Map<string, DistributionHistoryItem> = new Map();
 
   // User operations
   async getUser(id: string): Promise<User | undefined> {
@@ -711,6 +717,17 @@ export class NewMemStorage implements IStorage {
       return; // Nothing to distribute
     }
 
+    // Create distribution history entry
+    const historyId = `distribution_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const distributionHistory: DistributionHistory = {
+      id: historyId,
+      userId,
+      totalAmount: unallocatedAmount.toString(),
+      distributionDate: new Date(),
+      createdAt: new Date(),
+    };
+    this.distributionHistory.set(historyId, distributionHistory);
+
     // Get all receipts that haven't been distributed yet
     const userReceipts = Array.from(this.receipts.values())
       .filter(receipt => receipt.userId === userId);
@@ -722,17 +739,102 @@ export class NewMemStorage implements IStorage {
       return !hasDistributions;
     });
 
+    // Track distribution amounts for history
+    const distributionAmounts: Map<string, number> = new Map();
+
     // Distribute funds for each undistributed receipt
     for (const receipt of undistributedReceipts) {
       if (receipt.incomeSourceId) {
+        const receiptAmount = parseFloat(receipt.amount);
+        
+        // Get fund distributions for this income source
+        const fundDistributions = Array.from(this.incomeSourceFundDistributions.values())
+          .filter(dist => dist.incomeSourceId === receipt.incomeSourceId);
+
+        for (const fundDist of fundDistributions) {
+          const percentage = parseFloat(fundDist.percentage);
+          const amount = (receiptAmount * percentage) / 100;
+          
+          // Add to existing amount or create new
+          const currentAmount = distributionAmounts.get(fundDist.fundId) || 0;
+          distributionAmounts.set(fundDist.fundId, currentAmount + amount);
+        }
+
         await this.distributeFundsForReceiptByIncomeSource(
           receipt.id, 
-          parseFloat(receipt.amount), 
+          receiptAmount, 
           receipt.incomeSourceId, 
           userId
         );
       }
     }
+
+    // Create history items for each fund that received money
+    for (const [fundId, amount] of distributionAmounts) {
+      // Calculate percentage of total
+      const percentage = (amount / unallocatedAmount) * 100;
+      
+      const historyItemId = `distribution_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const historyItem: DistributionHistoryItem = {
+        id: historyItemId,
+        distributionId: historyId,
+        fundId,
+        amount: amount.toString(),
+        percentage: percentage.toString(),
+        createdAt: new Date(),
+      };
+      this.distributionHistoryItems.set(historyItemId, historyItem);
+    }
+  }
+
+  // Distribution History operations
+  async getDistributionHistory(userId: string): Promise<DistributionHistory[]> {
+    return Array.from(this.distributionHistory.values())
+      .filter(dist => dist.userId === userId)
+      .sort((a, b) => new Date(b.distributionDate).getTime() - new Date(a.distributionDate).getTime());
+  }
+
+  async getDistributionHistoryWithItems(userId: string): Promise<(DistributionHistory & { items: (DistributionHistoryItem & { fundName: string })[] })[]> {
+    const histories = await this.getDistributionHistory(userId);
+    
+    return histories.map(history => {
+      const items = Array.from(this.distributionHistoryItems.values())
+        .filter(item => item.distributionId === history.id)
+        .map(item => {
+          const fund = this.funds.get(item.fundId);
+          return {
+            ...item,
+            fundName: fund?.name || 'Unknown Fund'
+          };
+        });
+      
+      return {
+        ...history,
+        items
+      };
+    });
+  }
+
+  async getDistributionHistoryById(id: string, userId: string): Promise<(DistributionHistory & { items: (DistributionHistoryItem & { fundName: string })[] }) | undefined> {
+    const history = this.distributionHistory.get(id);
+    if (!history || history.userId !== userId) {
+      return undefined;
+    }
+
+    const items = Array.from(this.distributionHistoryItems.values())
+      .filter(item => item.distributionId === id)
+      .map(item => {
+        const fund = this.funds.get(item.fundId);
+        return {
+          ...item,
+          fundName: fund?.name || 'Unknown Fund'
+        };
+      });
+
+    return {
+      ...history,
+      items
+    };
   }
 }
 
