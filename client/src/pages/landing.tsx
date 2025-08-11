@@ -34,14 +34,25 @@ export default function Landing() {
             </div>
           </div>
 
-          <Button 
-            onClick={handleLogin}
-            className="w-full bg-primary hover:bg-blue-700 text-white py-3 font-medium"
-            size="lg"
-          >
-            Войти
-            <ChartLine className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="space-y-3">
+            <Button 
+              onClick={handleLogin}
+              className="w-full bg-primary hover:bg-blue-700 text-white py-3 font-medium"
+              size="lg"
+            >
+              Быстрый вход
+              <ChartLine className="ml-2 h-4 w-4" />
+            </Button>
+            
+            <Button 
+              onClick={() => window.location.href = "/auth"}
+              variant="outline"
+              className="w-full py-3 font-medium"
+              size="lg"
+            >
+              Регистрация / Расширенный вход
+            </Button>
+          </div>
 
           <div className="mt-6 text-center">
             <p className="text-xs text-gray-500">
