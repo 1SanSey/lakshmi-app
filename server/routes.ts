@@ -137,17 +137,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/receipts", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const validatedData = insertReceiptSchema.parse(req.body);
-      const receipt = await storage.createReceipt(validatedData, userId);
+      const receiptData = {
+        ...req.body,
+        amount: parseFloat(req.body.amount),
+        date: new Date(req.body.date),
+      };
       
-      // Automatically distribute funds for this receipt
-      await storage.distributeFundsForReceipt(receipt.id, receipt.amount, userId);
+      const receipt = await storage.createReceipt(receiptData, userId);
+      
+      // Automatically distribute funds for this receipt based on income source
+      if (receipt.incomeSourceId) {
+        await storage.distributeFundsForReceiptByIncomeSource(receipt.id, receipt.amount, receipt.incomeSourceId, userId);
+      }
       
       res.status(201).json(receipt);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
       console.error("Error creating receipt:", error);
       res.status(500).json({ message: "Failed to create receipt" });
     }
@@ -188,6 +192,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting receipt:", error);
       res.status(500).json({ message: "Failed to delete receipt" });
+    }
+  });
+
+  app.post("/api/receipts/:receiptId/items", isAuthenticated, async (req: any, res) => {
+    try {
+      const { receiptId } = req.params;
+      const { sponsorId, amount } = req.body;
+      
+      const receiptItem = await storage.createReceiptItem({
+        receiptId,
+        sponsorId,
+        amount: parseFloat(amount),
+      });
+      
+      res.status(201).json(receiptItem);
+    } catch (error) {
+      console.error("Error creating receipt item:", error);
+      res.status(500).json({ error: "Failed to create receipt item" });
     }
   });
 

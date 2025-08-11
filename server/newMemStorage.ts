@@ -390,7 +390,7 @@ export class NewMemStorage implements IStorage {
   }
 
   // Receipt item operations
-  async createReceiptItem(receiptItem: InsertReceiptItem): Promise<ReceiptItem> {
+  async createReceiptItem(receiptItem: InsertReceiptItem, userId?: string): Promise<ReceiptItem> {
     const id = `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date();
     const newReceiptItem: ReceiptItem = {
@@ -422,6 +422,40 @@ export class NewMemStorage implements IStorage {
     
     itemsToDelete.forEach(item => this.receiptItems.delete(item.id));
     return true;
+  }
+
+  async distributeFundsForReceiptByIncomeSource(receiptId: string, amount: number, incomeSourceId: string, userId: string): Promise<void> {
+    // Remove existing distributions for this receipt
+    const existingDistributions = Array.from(this.fundDistributions.values())
+      .filter(d => d.receiptId === receiptId);
+    existingDistributions.forEach(d => this.fundDistributions.delete(d.id));
+    
+    // Get fund distributions for this income source
+    const incomeSourceDistributions = Array.from(this.incomeSourceFundDistributions.values())
+      .filter(d => d.incomeSourceId === incomeSourceId);
+    
+    if (incomeSourceDistributions.length === 0) {
+      // Fallback to equal distribution if no specific distributions are configured
+      await this.distributeFundsForReceipt(receiptId, amount, userId);
+      return;
+    }
+    
+    for (const sourceDistribution of incomeSourceDistributions) {
+      const distributionAmount = (amount * sourceDistribution.percentage) / 100;
+      
+      const id = `dist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const now = new Date();
+      const distribution: FundDistribution = {
+        id,
+        receiptId,
+        fundId: sourceDistribution.fundId,
+        amount: distributionAmount,
+        percentage: sourceDistribution.percentage,
+        createdAt: now,
+        updatedAt: now,
+      };
+      this.fundDistributions.set(id, distribution);
+    }
   }
 
   // Fund distribution operations
