@@ -843,12 +843,9 @@ export class NewMemStorage implements IStorage {
       return false;
     }
 
-    // Get all items for this distribution to calculate total amount to return
+    // Get all items for this distribution
     const items = Array.from(this.distributionHistoryItems.values())
       .filter(item => item.distributionId === id);
-
-    // Calculate total amount to return to unallocated funds
-    const totalAmount = items.reduce((sum, item) => sum + Number(item.amount), 0);
 
     // Delete all distribution items
     items.forEach(item => this.distributionHistoryItems.delete(item.id));
@@ -856,8 +853,19 @@ export class NewMemStorage implements IStorage {
     // Delete the distribution history entry
     this.distributionHistory.delete(id);
 
-    // Add the amount back to unallocated funds
-    this.unallocatedFunds += totalAmount;
+    // Find and delete the corresponding fund distributions that were created during this distribution
+    // This will automatically make the funds unallocated again since unallocated funds are calculated dynamically
+    const distributionsToDelete = Array.from(this.fundDistributions.values())
+      .filter(dist => {
+        // Find distributions that were created around the same time as this history
+        const distributionTime = new Date(history.distributionDate).getTime();
+        const distTime = new Date(dist.createdAt).getTime();
+        // Allow 1 minute tolerance for timing
+        return Math.abs(distributionTime - distTime) < 60000;
+      });
+
+    // Delete the corresponding fund distributions
+    distributionsToDelete.forEach(dist => this.fundDistributions.delete(dist.id));
 
     return true;
   }
