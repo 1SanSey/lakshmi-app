@@ -54,7 +54,7 @@ export default function SponsorModal({ open, onClose, sponsor }: SponsorModalPro
     mutationFn: async (data: FormData) => {
       const url = sponsor ? `/api/sponsors/${sponsor.id}` : "/api/sponsors";
       const method = sponsor ? "PUT" : "POST";
-      return await apiRequest(method, url, data);
+      return await apiRequest(url, method, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sponsors"] });

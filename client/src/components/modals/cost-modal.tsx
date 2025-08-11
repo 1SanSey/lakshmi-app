@@ -98,7 +98,7 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
       };
       const url = cost ? `/api/costs/${cost.id}` : "/api/costs";
       const method = cost ? "PUT" : "POST";
-      return await apiRequest(method, url, submitData);
+      return await apiRequest(url, method, submitData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/costs"] });
