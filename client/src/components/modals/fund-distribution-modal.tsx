@@ -56,6 +56,7 @@ export default function FundDistributionModal({ isOpen, onClose }: FundDistribut
       queryClient.invalidateQueries({ queryKey: ["/api/manual-fund-distributions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/unallocated-funds"] });
       queryClient.invalidateQueries({ queryKey: ["/api/funds-with-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/distribution-history"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       handleClose();
     },
