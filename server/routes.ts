@@ -7,6 +7,7 @@ import {
   insertReceiptSchema, 
   insertCostSchema, 
   insertFundSchema,
+  insertFundTransferSchema,
   insertIncomeSourceSchema,
   insertIncomeSourceFundDistributionSchema,
   insertReceiptItemSchema
@@ -510,6 +511,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error creating receipt item:", error);
       res.status(500).json({ message: "Failed to create receipt item" });
+    }
+  });
+
+  // Fund transfer routes
+  app.get("/api/fund-transfers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const transfers = await storage.getFundTransfers(userId);
+      res.json(transfers);
+    } catch (error) {
+      console.error("Error fetching fund transfers:", error);
+      res.status(500).json({ message: "Failed to fetch fund transfers" });
+    }
+  });
+
+  app.post("/api/fund-transfers", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertFundTransferSchema.parse({
+        ...req.body,
+        userId
+      });
+      const transfer = await storage.createFundTransfer(validatedData);
+      res.status(201).json(transfer);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating fund transfer:", error);
+      res.status(500).json({ message: "Failed to create fund transfer" });
+    }
+  });
+
+  app.delete("/api/fund-transfers/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const deleted = await storage.deleteFundTransfer(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Fund transfer not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting fund transfer:", error);
+      res.status(500).json({ message: "Failed to delete fund transfer" });
+    }
+  });
+
+  // Fund balance routes
+  app.get("/api/funds-with-balances", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const fundsWithBalances = await storage.getFundsWithBalances(userId);
+      res.json(fundsWithBalances);
+    } catch (error) {
+      console.error("Error fetching funds with balances:", error);
+      res.status(500).json({ message: "Failed to fetch funds with balances" });
+    }
+  });
+
+  app.get("/api/funds/:id/balance", isAuthenticated, async (req: any, res) => {
+    try {
+      const balance = await storage.getFundBalance(req.params.id);
+      res.json({ balance });
+    } catch (error) {
+      console.error("Error fetching fund balance:", error);
+      res.status(500).json({ message: "Failed to fetch fund balance" });
     }
   });
 

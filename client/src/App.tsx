@@ -11,6 +11,7 @@ import Sponsors from "@/pages/sponsors";
 import Receipts from "@/pages/receipts";
 import Costs from "@/pages/costs";
 import Funds from "@/pages/funds";
+import FundTransfers from "@/pages/fund-transfers";
 import IncomeSources from "@/pages/income-sources";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/layout/header";
@@ -43,6 +44,7 @@ function Router() {
               <Route path="/receipts" component={Receipts} />
               <Route path="/costs" component={Costs} />
               <Route path="/funds" component={Funds} />
+              <Route path="/fund-transfers" component={FundTransfers} />
               <Route path="/income-sources" component={IncomeSources} />
               <Route component={NotFound} />
             </Switch>

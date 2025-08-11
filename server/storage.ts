@@ -6,6 +6,7 @@ import {
   costs,
   funds,
   fundDistributions,
+  fundTransfers,
   incomeSources,
   incomeSourceFundDistributions,
   type User,
@@ -22,6 +23,8 @@ import {
   type InsertFund,
   type FundDistribution,
   type InsertFundDistribution,
+  type FundTransfer,
+  type InsertFundTransfer,
   type IncomeSource,
   type InsertIncomeSource,
   type IncomeSourceFundDistribution,
@@ -101,6 +104,15 @@ export interface IStorage {
   deleteReceiptItems(receiptId: string): Promise<boolean>;
   deleteFundDistributionsByReceipt(receiptId: string): Promise<void>;
   distributeFundsForReceipt(receiptId: string, receiptAmount: string, userId: string): Promise<void>;
+
+  // Fund transfer operations
+  createFundTransfer(transfer: InsertFundTransfer): Promise<FundTransfer>;
+  getFundTransfers(userId: string): Promise<(FundTransfer & { fromFundName: string; toFundName: string })[]>;
+  deleteFundTransfer(id: string): Promise<boolean>;
+
+  // Fund balance operations
+  getFundBalance(fundId: string): Promise<number>;
+  getFundsWithBalances(userId: string): Promise<(Fund & { balance: number })[]>;
 }
 
 export class DatabaseStorage implements IStorage {

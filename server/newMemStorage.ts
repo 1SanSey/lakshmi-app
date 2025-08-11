@@ -14,6 +14,8 @@ import {
   type InsertFund,
   type FundDistribution,
   type InsertFundDistribution,
+  type FundTransfer,
+  type InsertFundTransfer,
   type IncomeSource,
   type InsertIncomeSource,
   type IncomeSourceFundDistribution,
@@ -28,6 +30,7 @@ export class NewMemStorage implements IStorage {
   private costs: Map<string, Cost> = new Map();
   private funds: Map<string, Fund> = new Map();
   private fundDistributions: Map<string, FundDistribution> = new Map();
+  private fundTransfers: Map<string, FundTransfer> = new Map();
   private incomeSources: Map<string, IncomeSource> = new Map();
   private incomeSourceFundDistributions: Map<string, IncomeSourceFundDistribution> = new Map();
 
@@ -506,6 +509,78 @@ export class NewMemStorage implements IStorage {
       recentReceipts: userReceipts,
       recentCosts: userCosts
     };
+  }
+
+  // Fund transfer operations
+  async createFundTransfer(transfer: InsertFundTransfer): Promise<FundTransfer> {
+    const id = `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const now = new Date();
+    const newTransfer: FundTransfer = {
+      id,
+      fromFundId: transfer.fromFundId,
+      toFundId: transfer.toFundId,
+      amount: transfer.amount,
+      description: transfer.description || null,
+      userId: transfer.userId,
+      createdAt: now,
+    };
+    this.fundTransfers.set(id, newTransfer);
+    return newTransfer;
+  }
+
+  async getFundTransfers(userId: string): Promise<(FundTransfer & { fromFundName: string; toFundName: string })[]> {
+    const transfers = Array.from(this.fundTransfers.values())
+      .filter(transfer => transfer.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    return transfers.map(transfer => ({
+      ...transfer,
+      fromFundName: this.funds.get(transfer.fromFundId)?.name || 'Unknown Fund',
+      toFundName: this.funds.get(transfer.toFundId)?.name || 'Unknown Fund'
+    }));
+  }
+
+  async deleteFundTransfer(id: string): Promise<boolean> {
+    return this.fundTransfers.delete(id);
+  }
+
+  // Fund balance calculations
+  async getFundBalance(fundId: string): Promise<number> {
+    const fund = this.funds.get(fundId);
+    if (!fund) return 0;
+
+    let balance = parseFloat(fund.initialBalance || "0");
+
+    // Add money from fund distributions (receipts)
+    const distributions = Array.from(this.fundDistributions.values())
+      .filter(dist => dist.fundId === fundId);
+    balance += distributions.reduce((sum, dist) => sum + parseFloat(dist.amount), 0);
+
+    // Add money transferred TO this fund
+    const transfersTo = Array.from(this.fundTransfers.values())
+      .filter(transfer => transfer.toFundId === fundId);
+    balance += transfersTo.reduce((sum, transfer) => sum + parseFloat(transfer.amount), 0);
+
+    // Subtract money transferred FROM this fund
+    const transfersFrom = Array.from(this.fundTransfers.values())
+      .filter(transfer => transfer.fromFundId === fundId);
+    balance -= transfersFrom.reduce((sum, transfer) => sum + parseFloat(transfer.amount), 0);
+
+    return balance;
+  }
+
+  async getFundsWithBalances(userId: string): Promise<(Fund & { balance: number })[]> {
+    const userFunds = Array.from(this.funds.values())
+      .filter(fund => fund.userId === userId);
+    
+    const fundsWithBalances = await Promise.all(
+      userFunds.map(async (fund) => ({
+        ...fund,
+        balance: await this.getFundBalance(fund.id)
+      }))
+    );
+
+    return fundsWithBalances;
   }
 }
 

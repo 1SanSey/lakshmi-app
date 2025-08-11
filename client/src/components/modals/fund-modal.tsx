@@ -29,7 +29,12 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { insertFundSchema } from "@shared/schema";
 import type { Fund } from "@shared/schema";
 
-const formSchema = insertFundSchema;
+const formSchema = insertFundSchema.extend({
+  initialBalance: z.string().refine((val) => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= 0;
+  }, "Сумма должна быть неотрицательным числом"),
+});
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -48,6 +53,7 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
     defaultValues: {
       name: "",
       description: "",
+      initialBalance: "0",
       isActive: true,
     },
   });
@@ -57,12 +63,14 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
       form.reset({
         name: fund.name,
         description: fund.description || "",
+        initialBalance: fund.initialBalance || "0",
         isActive: fund.isActive ?? true,
       });
     } else {
       form.reset({
         name: "",
         description: "",
+        initialBalance: "0",
         isActive: true,
       });
     }
@@ -150,6 +158,31 @@ export default function FundModal({ open, onClose, fund }: FundModalProps) {
                       {...field}
                       value={field.value || ""}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="initialBalance"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Начальный остаток</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input 
+                        type="number" 
+                        placeholder="0"
+                        min="0"
+                        step="0.01"
+                        {...field}
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                        ₽
+                      </div>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

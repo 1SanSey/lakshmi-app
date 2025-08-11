@@ -111,11 +111,12 @@ export const receiptsRelations = relations(receipts, ({ one, many }) => ({
   distributions: many(fundDistributions),
 }));
 
-// Funds table - represents different funds that receive distributed money (removed percentage)
+// Funds table - represents different funds that receive distributed money
 export const funds = pgTable("funds", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 255 }).notNull(),
   description: varchar("description", { length: 500 }),
+  initialBalance: decimal("initial_balance", { precision: 12, scale: 2 }).default("0"),
   isActive: boolean("is_active").default(true),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
@@ -153,6 +154,17 @@ export const fundDistributions = pgTable("fund_distributions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Fund transfers table - tracks money transfers between funds
+export const fundTransfers = pgTable("fund_transfers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  fromFundId: varchar("from_fund_id").notNull().references(() => funds.id, { onDelete: "cascade" }),
+  toFundId: varchar("to_fund_id").notNull().references(() => funds.id, { onDelete: "cascade" }),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  description: varchar("description", { length: 500 }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const costsRelations = relations(costs, ({ one }) => ({
   user: one(users, {
     fields: [costs.userId],
@@ -167,6 +179,8 @@ export const fundsRelations = relations(funds, ({ one, many }) => ({
   }),
   distributions: many(fundDistributions),
   incomeSourceDistributions: many(incomeSourceFundDistributions),
+  transfersFrom: many(fundTransfers, { relationName: "fromFund" }),
+  transfersTo: many(fundTransfers, { relationName: "toFund" }),
 }));
 
 export const fundDistributionsRelations = relations(fundDistributions, ({ one }) => ({
@@ -211,6 +225,24 @@ export const receiptItemsRelations = relations(receiptItems, ({ one }) => ({
   sponsor: one(sponsors, {
     fields: [receiptItems.sponsorId],
     references: [sponsors.id],
+  }),
+}));
+
+// Fund transfers relations
+export const fundTransfersRelations = relations(fundTransfers, ({ one }) => ({
+  fromFund: one(funds, {
+    fields: [fundTransfers.fromFundId],
+    references: [funds.id],
+    relationName: "fromFund",
+  }),
+  toFund: one(funds, {
+    fields: [fundTransfers.toFundId],
+    references: [funds.id],
+    relationName: "toFund",
+  }),
+  user: one(users, {
+    fields: [fundTransfers.userId],
+    references: [users.id],
   }),
 }));
 
@@ -267,6 +299,12 @@ export const insertReceiptItemSchema = createInsertSchema(receiptItems).omit({
   updatedAt: true,
 });
 
+export const insertFundTransferSchema = createInsertSchema(fundTransfers).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -286,3 +324,5 @@ export type IncomeSourceFundDistribution = typeof incomeSourceFundDistributions.
 export type InsertIncomeSourceFundDistribution = z.infer<typeof insertIncomeSourceFundDistributionSchema>;
 export type ReceiptItem = typeof receiptItems.$inferSelect;
 export type InsertReceiptItem = z.infer<typeof insertReceiptItemSchema>;
+export type FundTransfer = typeof fundTransfers.$inferSelect;
+export type InsertFundTransfer = z.infer<typeof insertFundTransferSchema>;
