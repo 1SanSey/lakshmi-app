@@ -20,18 +20,7 @@ import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading || !isAuthenticated) {
-    return (
-      <Switch>
-        <Route path="/" component={Landing} />
-        <Route path="/auth" component={AuthPage} />
-        <Route component={NotFound} />
-      </Switch>
-    );
-  }
-
+  // Временно отключаем аутентификацию для тестирования
   return (
     <div className="min-h-screen bg-background">
       <Header />

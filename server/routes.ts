@@ -1,7 +1,19 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { newMemStorage as storage } from "./newMemStorage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, skipAuth } from "./replitAuth";
+
+// Временный middleware для пропуска аутентификации
+const skipAuth = (req: any, res: any, next: any) => {
+  // Добавляем фиктивного пользователя для тестирования
+  req.user = {
+    claims: {
+      sub: "test_user_123"
+    }
+  };
+  req.skipAuth = () => true;
+  next();
+};
 import { 
   insertSponsorSchema, 
   insertReceiptSchema, 
@@ -19,12 +31,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Auth routes - временно возвращаем фиктивного пользователя
+  app.get('/api/auth/user', skipAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      res.json({
+        id: "test_user_123",
+        email: "test@example.com",
+        firstName: "Test",
+        lastName: "User"
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -32,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Sponsor routes
-  app.get("/api/sponsors", isAuthenticated, async (req: any, res) => {
+  app.get("/api/sponsors", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const search = req.query.search as string;
@@ -44,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/sponsors/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/sponsors/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const sponsor = await storage.getSponsor(req.params.id, userId);
@@ -58,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sponsors", isAuthenticated, async (req: any, res) => {
+  app.post("/api/sponsors", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertSponsorSchema.parse(req.body);
@@ -73,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/sponsors/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/sponsors/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertSponsorSchema.partial().parse(req.body);
@@ -91,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/sponsors/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/sponsors/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const deleted = await storage.deleteSponsor(req.params.id, userId);
@@ -106,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Receipt routes
-  app.get("/api/receipts", isAuthenticated, async (req: any, res) => {
+  app.get("/api/receipts", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const search = req.query.search as string;
@@ -120,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/receipts/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/receipts/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const receipt = await storage.getReceipt(req.params.id, userId);
@@ -134,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/receipts", isAuthenticated, async (req: any, res) => {
+  app.post("/api/receipts", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const receiptData = {
@@ -157,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/receipts/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/receipts/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertReceiptSchema.partial().parse(req.body);
@@ -181,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/receipts/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/receipts/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const deleted = await storage.deleteReceipt(req.params.id, userId);
@@ -195,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/receipts/:receiptId/items", isAuthenticated, async (req: any, res) => {
+  app.post("/api/receipts/:receiptId/items", skipAuth, async (req: any, res) => {
     try {
       const { receiptId } = req.params;
       const { sponsorId, amount } = req.body;
@@ -214,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cost routes
-  app.get("/api/costs", isAuthenticated, async (req: any, res) => {
+  app.get("/api/costs", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const search = req.query.search as string;
@@ -229,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/costs/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/costs/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const cost = await storage.getCost(req.params.id, userId);
@@ -243,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/costs", isAuthenticated, async (req: any, res) => {
+  app.post("/api/costs", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertCostSchema.parse(req.body);
@@ -258,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/costs/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/costs/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertCostSchema.partial().parse(req.body);
@@ -276,7 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/costs/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/costs/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const deleted = await storage.deleteCost(req.params.id, userId);
@@ -291,7 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Fund routes
-  app.get("/api/funds", isAuthenticated, async (req: any, res) => {
+  app.get("/api/funds", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const funds = await storage.getFunds(userId);
@@ -302,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/funds/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/funds/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const fund = await storage.getFund(req.params.id, userId);
@@ -316,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/funds", isAuthenticated, async (req: any, res) => {
+  app.post("/api/funds", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertFundSchema.parse(req.body);
@@ -331,7 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/funds/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/funds/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertFundSchema.partial().parse(req.body);
@@ -349,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/funds/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/funds/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const deleted = await storage.deleteFund(req.params.id, userId);
@@ -364,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Fund distribution routes
-  app.get("/api/receipts/:receiptId/distributions", isAuthenticated, async (req: any, res) => {
+  app.get("/api/receipts/:receiptId/distributions", skipAuth, async (req: any, res) => {
     try {
       const distributions = await storage.getFundDistributionsByReceipt(req.params.receiptId);
       res.json(distributions);
@@ -375,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard statistics routes
-  app.get("/api/dashboard/stats", isAuthenticated, async (req: any, res) => {
+  app.get("/api/dashboard/stats", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const stats = await storage.getDashboardStats(userId);
@@ -386,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/dashboard/activity", isAuthenticated, async (req: any, res) => {
+  app.get("/api/dashboard/activity", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
@@ -399,7 +414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Income source routes
-  app.get("/api/income-sources", isAuthenticated, async (req: any, res) => {
+  app.get("/api/income-sources", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const incomeSources = await storage.getIncomeSources(userId);
@@ -410,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/income-sources/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/income-sources/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const incomeSource = await storage.getIncomeSource(req.params.id, userId);
@@ -424,7 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/income-sources", isAuthenticated, async (req: any, res) => {
+  app.post("/api/income-sources", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertIncomeSourceSchema.parse(req.body);
@@ -439,7 +454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/income-sources/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/income-sources/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertIncomeSourceSchema.partial().parse(req.body);
@@ -457,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/income-sources/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/income-sources/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const deleted = await storage.deleteIncomeSource(req.params.id, userId);
@@ -472,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Income source fund distribution routes
-  app.get("/api/income-sources/:id/fund-distributions", isAuthenticated, async (req: any, res) => {
+  app.get("/api/income-sources/:id/fund-distributions", skipAuth, async (req: any, res) => {
     try {
       const distributions = await storage.getIncomeSourceFundDistributions(req.params.id);
       res.json(distributions);
@@ -482,7 +497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/income-sources/:id/fund-distributions", isAuthenticated, async (req: any, res) => {
+  app.post("/api/income-sources/:id/fund-distributions", skipAuth, async (req: any, res) => {
     try {
       const validatedData = insertIncomeSourceFundDistributionSchema.parse({
         ...req.body,
@@ -499,7 +514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/income-sources/:id/fund-distributions", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/income-sources/:id/fund-distributions", skipAuth, async (req: any, res) => {
     try {
       await storage.deleteIncomeSourceFundDistributions(req.params.id);
       res.status(204).send();
@@ -510,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Receipt items routes
-  app.get("/api/receipts/:id/items", isAuthenticated, async (req: any, res) => {
+  app.get("/api/receipts/:id/items", skipAuth, async (req: any, res) => {
     try {
       const receiptItems = await storage.getReceiptItems(req.params.id);
       res.json(receiptItems);
@@ -520,7 +535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/receipts/:id/items", isAuthenticated, async (req: any, res) => {
+  app.post("/api/receipts/:id/items", skipAuth, async (req: any, res) => {
     try {
       const validatedData = insertReceiptItemSchema.parse({
         ...req.body,
@@ -538,7 +553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Fund transfer routes
-  app.get("/api/fund-transfers", isAuthenticated, async (req: any, res) => {
+  app.get("/api/fund-transfers", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const transfers = await storage.getFundTransfers(userId);
@@ -549,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/fund-transfers", isAuthenticated, async (req: any, res) => {
+  app.post("/api/fund-transfers", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const transferData = {
@@ -565,7 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/fund-transfers/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/fund-transfers/:id", skipAuth, async (req: any, res) => {
     try {
       const deleted = await storage.deleteFundTransfer(req.params.id);
       if (!deleted) {
@@ -579,7 +594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Manual fund distribution routes
-  app.get("/api/manual-fund-distributions", isAuthenticated, async (req: any, res) => {
+  app.get("/api/manual-fund-distributions", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const distributions = await storage.getManualFundDistributions(userId);
@@ -590,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/manual-fund-distributions", isAuthenticated, async (req: any, res) => {
+  app.post("/api/manual-fund-distributions", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = insertManualFundDistributionSchema.parse(req.body);
@@ -605,7 +620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/manual-fund-distributions/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/manual-fund-distributions/:id", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const success = await storage.deleteManualFundDistribution(req.params.id, userId);
@@ -620,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/unallocated-funds", isAuthenticated, async (req: any, res) => {
+  app.get("/api/unallocated-funds", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const unallocatedAmount = await storage.getUnallocatedFunds(userId);
@@ -632,7 +647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Fund balance routes
-  app.get("/api/funds-with-balances", isAuthenticated, async (req: any, res) => {
+  app.get("/api/funds-with-balances", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const fundsWithBalances = await storage.getFundsWithBalances(userId);
@@ -643,7 +658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/funds/:id/balance", isAuthenticated, async (req: any, res) => {
+  app.get("/api/funds/:id/balance", skipAuth, async (req: any, res) => {
     try {
       const balance = await storage.getFundBalance(req.params.id);
       res.json({ balance });
