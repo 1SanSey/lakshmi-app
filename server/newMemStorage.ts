@@ -128,10 +128,10 @@ export class NewMemStorage implements IStorage {
       result = result.filter(r => r.date <= toDate);
     }
     
-    // Note: sponsorName will be undefined in new architecture as receipts are linked to income sources
+    // Return income source name instead of sponsor name
     return result.map(receipt => ({
       ...receipt,
-      sponsorName: undefined
+      sponsorName: this.incomeSources.get(receipt.incomeSourceId)?.name
     })).sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
@@ -148,6 +148,7 @@ export class NewMemStorage implements IStorage {
       userId,
       date: receipt.date,
       description: receipt.description,
+      amount: receipt.amount,
       incomeSourceId: receipt.incomeSourceId,
       createdAt: now,
       updatedAt: now,

@@ -206,7 +206,7 @@ export default function Receipts() {
                         </div>
                       </TableCell>
                       <TableCell className="text-gray-900">
-                        {receipt.sponsorName || "Прямое"}
+                        {receipt.sponsorName || "Неизвестный источник"}
                       </TableCell>
                       <TableCell className="amount-positive">
                         {formatCurrency(receipt.amount)}
