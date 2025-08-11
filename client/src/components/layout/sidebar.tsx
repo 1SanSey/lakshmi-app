@@ -22,9 +22,9 @@ export default function Sidebar() {
             const isActive = location === item.href;
             return (
               <Link key={item.name} href={item.href}>
-                <a
+                <div
                   className={cn(
-                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full transition-colors",
+                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full transition-colors cursor-pointer",
                     isActive
                       ? "nav-active"
                       : "nav-inactive"
@@ -32,7 +32,7 @@ export default function Sidebar() {
                 >
                   <item.icon className="mr-3 h-5 w-5" />
                   {item.name}
-                </a>
+                </div>
               </Link>
             );
           })}

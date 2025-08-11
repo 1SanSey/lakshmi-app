@@ -21,15 +21,15 @@ export default function MobileNav() {
           const isActive = location === item.href;
           return (
             <Link key={item.name} href={item.href}>
-              <a
+              <div
                 className={cn(
-                  "flex flex-col items-center py-2 px-3 text-xs font-medium transition-colors",
+                  "flex flex-col items-center py-2 px-3 text-xs font-medium transition-colors cursor-pointer",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 <item.icon className={cn("h-5 w-5 mb-1", isActive ? "text-primary" : "text-muted-foreground")} />
                 <span>{item.name}</span>
-              </a>
+              </div>
             </Link>
           );
         })}
