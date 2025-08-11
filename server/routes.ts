@@ -178,10 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Receipt not found" });
       }
       
-      // Re-distribute funds if amount changed
-      if (validatedData.amount) {
-        await storage.distributeFundsForReceipt(receipt.id, receipt.amount, userId);
-      }
+      // Note: Fund redistribution will be handled manually by user
       
       res.json(receipt);
     } catch (error) {
@@ -215,13 +212,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const receiptItem = await storage.createReceiptItem({
         receiptId,
         sponsorId,
-        amount: parseFloat(amount),
+        amount: parseFloat(amount).toString(),
       });
       
       res.status(201).json(receiptItem);
     } catch (error) {
       console.error("Error creating receipt item:", error);
       res.status(500).json({ error: "Failed to create receipt item" });
+    }
+  });
+
+  app.delete("/api/receipts/:receiptId/items", skipAuth, async (req: any, res) => {
+    try {
+      const { receiptId } = req.params;
+      await storage.deleteReceiptItems(receiptId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting receipt items:", error);
+      res.status(500).json({ error: "Failed to delete receipt items" });
     }
   });
 

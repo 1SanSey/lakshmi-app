@@ -181,6 +181,73 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async (data: {
+      incomeSourceId: string;
+      date: Date;
+      description: string;
+      sponsorItems: SponsorItem[];
+    }) => {
+      if (!receipt?.id) throw new Error("Receipt ID is required for update");
+      
+      const totalAmount = data.sponsorItems.reduce((sum, item) => sum + parseFloat(item.amount || "0"), 0);
+      
+      // Update receipt
+      const receiptData = {
+        incomeSourceId: data.incomeSourceId,
+        date: data.date,
+        description: data.description,
+        amount: totalAmount,
+      };
+      
+      await apiRequest(`/api/receipts/${receipt.id}`, "PUT", receiptData);
+      
+      // Delete existing receipt items
+      await apiRequest(`/api/receipts/${receipt.id}/items`, "DELETE");
+      
+      // Create new receipt items
+      for (const item of data.sponsorItems) {
+        if (item.sponsorId && item.amount && parseFloat(item.amount) > 0) {
+          await apiRequest(`/api/receipts/${receipt.id}/items`, "POST", {
+            sponsorId: item.sponsorId,
+            amount: parseFloat(item.amount),
+          });
+        }
+      }
+      
+      return receipt;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/receipts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/funds-with-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/unallocated-funds"] });
+      toast({
+        title: "Успешно",
+        description: "Поступление обновлено успешно",
+      });
+      handleClose();
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Неавторизован",
+          description: "Вы вышли из системы. Выполняется повторный вход...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить поступление",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleClose = () => {
     setSelectedIncomeSourceId("");
     setDate(new Date());
@@ -229,12 +296,23 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
       return;
     }
 
-    createMutation.mutate({
-      incomeSourceId: selectedIncomeSourceId,
-      date,
-      description,
-      sponsorItems: validItems,
-    });
+    if (receipt) {
+      // Редактирование существующего поступления
+      updateMutation.mutate({
+        incomeSourceId: selectedIncomeSourceId,
+        date,
+        description,
+        sponsorItems: validItems,
+      });
+    } else {
+      // Создание нового поступления
+      createMutation.mutate({
+        incomeSourceId: selectedIncomeSourceId,
+        date,
+        description,
+        sponsorItems: validItems,
+      });
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -323,7 +401,7 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Plus className="h-5 w-5" />
-            <span>Добавить поступление</span>
+            <span>{receipt ? "Редактировать поступление" : "Добавить поступление"}</span>
           </DialogTitle>
           <DialogDescription>
             Выберите источник поступления и добавьте спонсоров с их суммами
@@ -483,10 +561,13 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
             </Button>
             <Button 
               type="submit" 
-              disabled={createMutation.isPending || !selectedIncomeSourceId || getTotalAmount() === 0}
+              disabled={createMutation.isPending || updateMutation.isPending || !selectedIncomeSourceId || getTotalAmount() === 0}
               className="bg-primary hover:bg-primary/90"
             >
-              {createMutation.isPending ? "Создание..." : "Сохранить"}
+              {createMutation.isPending || updateMutation.isPending ? 
+                (receipt ? "Обновление..." : "Создание...") : 
+                "Сохранить"
+              }
             </Button>
           </div>
         </form>

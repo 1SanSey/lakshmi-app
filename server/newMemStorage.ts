@@ -423,12 +423,11 @@ export class NewMemStorage implements IStorage {
     }));
   }
 
-  async deleteReceiptItems(receiptId: string): Promise<boolean> {
+  async deleteReceiptItems(receiptId: string): Promise<void> {
     const itemsToDelete = Array.from(this.receiptItems.values())
       .filter(item => item.receiptId === receiptId);
     
     itemsToDelete.forEach(item => this.receiptItems.delete(item.id));
-    return true;
   }
 
   async distributeFundsForReceiptByIncomeSource(receiptId: string, amount: number, incomeSourceId: string, userId: string): Promise<void> {
