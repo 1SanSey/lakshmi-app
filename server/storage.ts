@@ -128,6 +128,7 @@ export interface IStorage {
   getDistributionHistory(userId: string): Promise<any[]>;
   getDistributionHistoryWithItems(userId: string): Promise<any[]>;
   getDistributionHistoryById(id: string, userId: string): Promise<any | undefined>;
+  deleteDistributionHistory(id: string, userId: string): Promise<boolean>;
   
   // Distribution functions
   distributeUnallocatedFunds(userId: string): Promise<void>;

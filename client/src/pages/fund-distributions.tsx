@@ -131,6 +131,37 @@ export default function FundDistributions() {
     setIsDetailModalOpen(true);
   };
 
+  const deleteDistributionMutation = useMutation({
+    mutationFn: async (distributionId: string) => {
+      await apiRequest(`/api/distribution-history/${distributionId}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/distribution-history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/unallocated-funds"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/funds-with-balances"] });
+      toast({
+        title: "Успешно",
+        description: "Распределение удалено, средства возвращены в нераспределенные",
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting distribution:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить распределение",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteDistribution = (distributionId: string) => {
+    if (window.confirm("Вы уверены, что хотите удалить это распределение? Средства будут возвращены в нераспределенные.")) {
+      deleteDistributionMutation.mutate(distributionId);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
       year: 'numeric',
@@ -392,15 +423,26 @@ export default function FundDistributions() {
                       )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleViewDetails(distribution)}
-                    className="flex items-center gap-1"
-                  >
-                    <Eye className="w-4 h-4" />
-                    Подробно
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewDetails(distribution)}
+                      className="flex items-center gap-1"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Подробно
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteDistribution(distribution.id)}
+                      className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Удалить
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

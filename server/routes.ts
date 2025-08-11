@@ -706,6 +706,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/distribution-history/:id", skipAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      const deleted = await storage.deleteDistributionHistory(id, userId);
+      if (deleted) {
+        res.status(204).send();
+      } else {
+        res.status(404).json({ message: "Distribution history not found" });
+      }
+    } catch (error) {
+      console.error("Error deleting distribution history:", error);
+      res.status(500).json({ message: "Failed to delete distribution history" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

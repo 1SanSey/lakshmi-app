@@ -836,6 +836,31 @@ export class NewMemStorage implements IStorage {
       items
     };
   }
+
+  async deleteDistributionHistory(id: string, userId: string): Promise<boolean> {
+    const history = this.distributionHistory.get(id);
+    if (!history || history.userId !== userId) {
+      return false;
+    }
+
+    // Get all items for this distribution to calculate total amount to return
+    const items = Array.from(this.distributionHistoryItems.values())
+      .filter(item => item.distributionId === id);
+
+    // Calculate total amount to return to unallocated funds
+    const totalAmount = items.reduce((sum, item) => sum + Number(item.amount), 0);
+
+    // Delete all distribution items
+    items.forEach(item => this.distributionHistoryItems.delete(item.id));
+
+    // Delete the distribution history entry
+    this.distributionHistory.delete(id);
+
+    // Add the amount back to unallocated funds
+    this.unallocatedFunds += totalAmount;
+
+    return true;
+  }
 }
 
 export const newMemStorage = new NewMemStorage();
