@@ -1,5 +1,5 @@
 {
-  "name": "Financial Manager",
+  "name": "FinManager",
   "short_name": "FinManager",
   "description": "Progressive Web App for financial accounting with sponsors, receipts, and costs management",
   "start_url": "/",

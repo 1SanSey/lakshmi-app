@@ -39,7 +39,7 @@ export default function Header() {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <ChartLine className="text-primary-foreground h-5 w-5" />
             </div>
-            <h1 className="text-xl font-semibold text-foreground">Financial Manager</h1>
+            <h1 className="text-xl font-semibold text-foreground">FinManager</h1>
           </div>
 
           <div className="flex items-center space-x-4">

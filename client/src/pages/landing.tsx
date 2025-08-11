@@ -15,7 +15,7 @@ export default function Landing() {
             <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
               <ChartLine className="text-white h-8 w-8" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Финансовый менеджер</h1>
+            <h1 className="text-2xl font-bold text-gray-900">FinManager</h1>
             <p className="text-gray-600 mt-2">Войдите для управления финансами</p>
           </div>
 

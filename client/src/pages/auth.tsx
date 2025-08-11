@@ -31,7 +31,7 @@ export default function AuthPage() {
             <ChartLine className="text-white h-8 w-8" />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            Финансовый менеджер
+            FinManager
           </CardTitle>
           <p className="text-gray-600 mt-2">
             Войдите или зарегистрируйтесь для управления финансами

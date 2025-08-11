@@ -1,6 +1,6 @@
 # Overview
 
-This is a full-stack financial management application built for personal accounting and sponsor relationship management. The application allows users to track income through receipts from sponsors, monitor expenses through cost management, manage funds with percentage-based automatic distribution, and view comprehensive dashboard analytics. It's designed as a Progressive Web App (PWA) with offline capabilities and mobile-responsive design.
+FinManager is a full-stack financial management application built for personal accounting and sponsor relationship management. The application allows users to track income through receipts from sponsors, monitor expenses through cost management, manage funds with percentage-based automatic distribution, and view comprehensive dashboard analytics. It's designed as a Progressive Web App (PWA) with offline capabilities and mobile-responsive design.
 
 # User Preferences
 
@@ -86,6 +86,12 @@ Preferred communication style: Simple, everyday language.
   - Changed currency formatting to Russian Ruble (RUB) with proper locale
   - Updated navigation labels from "Панель управления" to "Обзор"
   - Translated error messages and success notifications throughout the app
+
+- **Project Rebranding**: Renamed project from "Финансовый менеджер" to "FinManager"
+  - Updated all page titles, headers, and branding throughout the application
+  - Changed HTML document title and PWA manifest to reflect new name
+  - Updated landing page, authentication page, and main header components
+  - Maintained Russian language interface while using English project name
 
 # External Dependencies
 
