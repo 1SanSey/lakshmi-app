@@ -99,7 +99,7 @@ export default function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalP
         incomeSourceId: data.incomeSourceId,
         date: data.date,
         description: data.description,
-        amount: totalAmount.toString(),
+        amount: totalAmount,
       };
       
       const response = await apiRequest("POST", "/api/receipts", receiptData);

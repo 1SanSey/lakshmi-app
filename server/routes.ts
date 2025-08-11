@@ -154,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const receiptData = {
         ...req.body,
-        amount: parseFloat(req.body.amount),
+        amount: parseFloat(req.body.amount) || 0,
         date: new Date(req.body.date),
       };
       
