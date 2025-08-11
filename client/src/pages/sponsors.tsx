@@ -245,7 +245,7 @@ export default function Sponsors() {
       </div>
 
       <SponsorModal
-        isOpen={isModalOpen}
+        open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         sponsor={editingSponsor}
       />
