@@ -168,29 +168,17 @@ export default function FundDistributions() {
         </CardContent>
       </Card>
 
-      {/* Distributions List */}
-      <div className="space-y-4">
-        {distributions.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Calculator className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Нет распределений
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Создайте первое распределение для управления нераспределенными средствами
-              </p>
-              <Button 
-                onClick={() => setIsModalOpen(true)}
-                variant="outline"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Создать распределение
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          distributions.map((distribution) => (
+      {/* Manual Distributions List - only show if there are manual distributions */}
+      {distributions.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Calculator className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Ручные распределения</h2>
+            <Badge variant="outline" className="text-sm">
+              {distributions.length}
+            </Badge>
+          </div>
+          {distributions.map((distribution) => (
             <Card key={distribution.id} className="financial-card">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
@@ -226,20 +214,35 @@ export default function FundDistributions() {
                 </CardContent>
               )}
             </Card>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* История распределений */}
-      {distributionHistory.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">История распределений</h2>
-            <Badge variant="outline" className="text-sm">
-              {distributionHistory.length}
-            </Badge>
-          </div>
+      <div className="space-y-4">
+        {distributionHistory.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                История пуста
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Автоматические распределения пока не выполнялись.
+                <br />
+                Создайте поступления с источниками доходов для автоматического распределения.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">История распределений</h2>
+              <Badge variant="outline" className="text-sm">
+                {distributionHistory.length}
+              </Badge>
+            </div>
           {distributionHistory.map((distribution) => (
             <Card key={distribution.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
@@ -283,8 +286,9 @@ export default function FundDistributions() {
               </CardContent>
             </Card>
           ))}
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       {/* Detail Modal */}
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
