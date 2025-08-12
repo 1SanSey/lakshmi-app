@@ -10,6 +10,8 @@ import {
   type InsertReceiptItem,
   type Cost, 
   type InsertCost,
+  type CostItem,
+  type InsertCostItem,
   type Fund,
   type InsertFund,
   type FundDistribution,
@@ -38,6 +40,7 @@ export class NewMemStorage implements IStorage {
   private receipts: Map<string, Receipt> = new Map();
   private receiptItems: Map<string, ReceiptItem> = new Map();
   private costs: Map<string, Cost> = new Map();
+  private costItems: Map<string, CostItem> = new Map();
   private funds: Map<string, Fund> = new Map();
   private fundDistributions: Map<string, FundDistribution> = new Map();
   private fundTransfers: Map<string, FundTransfer> = new Map();
@@ -237,22 +240,22 @@ export class NewMemStorage implements IStorage {
     return this.receipts.delete(id);
   }
 
-  // Cost operations
+  // Cost operations - новая структура
   async getCosts(
     userId: string, 
     search?: string, 
-    category?: string, 
+    expenseCategoryId?: string, 
     fromDate?: Date, 
     toDate?: Date
-  ): Promise<Cost[]> {
+  ): Promise<(Cost & { expenseCategoryName?: string; items?: (CostItem & { nomenclatureName?: string })[] })[]> {
     let result = Array.from(this.costs.values()).filter(c => c.userId === userId);
     
     if (search) {
       result = result.filter(c => c.description.toLowerCase().includes(search.toLowerCase()));
     }
     
-    if (category) {
-      result = result.filter(c => c.category === category);
+    if (expenseCategoryId) {
+      result = result.filter(c => c.expenseCategoryId === expenseCategoryId);
     }
     
     if (fromDate) {
@@ -263,19 +266,37 @@ export class NewMemStorage implements IStorage {
       result = result.filter(c => c.date <= toDate);
     }
     
-    return result.sort((a, b) => b.date.getTime() - a.date.getTime());
+    // Добавляем информацию о категории и позициях
+    return result.map(cost => {
+      const category = this.expenseCategories.get(cost.expenseCategoryId);
+      const items = Array.from(this.costItems.values())
+        .filter(item => item.costId === cost.id)
+        .map(item => {
+          const nomenclature = this.expenseNomenclature.get(item.expenseNomenclatureId);
+          return {
+            ...item,
+            nomenclatureName: nomenclature?.name
+          };
+        });
+        
+      return {
+        ...cost,
+        expenseCategoryName: category?.name,
+        items
+      };
+    }).sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
   async getCostsPaginated(
     userId: string, 
     search?: string, 
-    category?: string, 
+    expenseCategoryId?: string, 
     fromDate?: Date, 
     toDate?: Date,
     page: number = 1,
     limit: number = 20
   ): Promise<{
-    data: Cost[];
+    data: (Cost & { expenseCategoryName?: string; items?: (CostItem & { nomenclatureName?: string })[] })[];
     pagination: {
       page: number;
       limit: number;
@@ -283,7 +304,7 @@ export class NewMemStorage implements IStorage {
       totalPages: number;
     };
   }> {
-    const allCosts = await this.getCosts(userId, search, category, fromDate, toDate);
+    const allCosts = await this.getCosts(userId, search, expenseCategoryId, fromDate, toDate);
     
     const total = allCosts.length;
     const totalPages = Math.ceil(total / limit);
@@ -314,8 +335,8 @@ export class NewMemStorage implements IStorage {
       userId,
       date: cost.date,
       description: cost.description,
-      amount: cost.amount,
-      category: cost.category,
+      expenseCategoryId: cost.expenseCategoryId,
+      totalAmount: cost.totalAmount,
       createdAt: now,
       updatedAt: now,
     };
@@ -339,7 +360,62 @@ export class NewMemStorage implements IStorage {
   async deleteCost(id: string, userId: string): Promise<boolean> {
     const existing = this.costs.get(id);
     if (!existing || existing.userId !== userId) return false;
+    
+    // Delete associated cost items
+    const costItemsToDelete = Array.from(this.costItems.values())
+      .filter(item => item.costId === id);
+    costItemsToDelete.forEach(item => this.costItems.delete(item.id));
+    
     return this.costs.delete(id);
+  }
+
+  // Cost Items operations
+  async getCostItems(costId: string): Promise<(CostItem & { nomenclatureName?: string })[]> {
+    const items = Array.from(this.costItems.values())
+      .filter(item => item.costId === costId);
+      
+    return items.map(item => {
+      const nomenclature = this.expenseNomenclature.get(item.expenseNomenclatureId);
+      return {
+        ...item,
+        nomenclatureName: nomenclature?.name
+      };
+    });
+  }
+
+  async createCostItem(costItem: InsertCostItem, costId: string): Promise<CostItem> {
+    const id = `cost_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const now = new Date();
+    const newCostItem: CostItem = {
+      id,
+      costId,
+      expenseNomenclatureId: costItem.expenseNomenclatureId,
+      quantity: costItem.quantity,
+      unitPrice: costItem.unitPrice,
+      amount: costItem.amount,
+      description: costItem.description,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.costItems.set(id, newCostItem);
+    return newCostItem;
+  }
+
+  async updateCostItem(id: string, costItem: Partial<InsertCostItem>): Promise<CostItem | undefined> {
+    const existing = this.costItems.get(id);
+    if (!existing) return undefined;
+    
+    const updated: CostItem = {
+      ...existing,
+      ...costItem,
+      updatedAt: new Date(),
+    };
+    this.costItems.set(id, updated);
+    return updated;
+  }
+
+  async deleteCostItem(id: string): Promise<boolean> {
+    return this.costItems.delete(id);
   }
 
   // Fund operations (no percentage distribution)

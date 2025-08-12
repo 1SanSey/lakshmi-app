@@ -4,6 +4,7 @@ import {
   receipts,
   receiptItems,
   costs,
+  costItems,
   funds,
   fundDistributions,
   fundTransfers,
@@ -20,6 +21,8 @@ import {
   type InsertReceiptItem,
   type Cost,
   type InsertCost,
+  type CostItem,
+  type InsertCostItem,
   type Fund,
   type InsertFund,
   type FundDistribution,
@@ -56,12 +59,22 @@ export interface IStorage {
   updateReceipt(id: string, receipt: Partial<InsertReceipt>, userId: string): Promise<Receipt | undefined>;
   deleteReceipt(id: string, userId: string): Promise<boolean>;
   
-  // Cost operations
-  getCosts(userId: string, search?: string, category?: string, fromDate?: Date, toDate?: Date): Promise<Cost[]>;
+  // Cost operations - новая структура
+  getCosts(userId: string, search?: string, expenseCategoryId?: string, fromDate?: Date, toDate?: Date): Promise<(Cost & { expenseCategoryName?: string; items?: (CostItem & { nomenclatureName?: string })[] })[]>;
+  getCostsPaginated(userId: string, search?: string, expenseCategoryId?: string, fromDate?: Date, toDate?: Date, page?: number, limit?: number): Promise<{
+    data: (Cost & { expenseCategoryName?: string; items?: (CostItem & { nomenclatureName?: string })[] })[];
+    pagination: { page: number; limit: number; total: number; totalPages: number; };
+  }>;
   getCost(id: string, userId: string): Promise<Cost | undefined>;
   createCost(cost: InsertCost, userId: string): Promise<Cost>;
   updateCost(id: string, cost: Partial<InsertCost>, userId: string): Promise<Cost | undefined>;
   deleteCost(id: string, userId: string): Promise<boolean>;
+  
+  // Cost Items operations
+  getCostItems(costId: string): Promise<(CostItem & { nomenclatureName?: string })[]>;
+  createCostItem(costItem: InsertCostItem, costId: string): Promise<CostItem>;
+  updateCostItem(id: string, costItem: Partial<InsertCostItem>): Promise<CostItem | undefined>;
+  deleteCostItem(id: string): Promise<boolean>;
   
   // Dashboard statistics
   getDashboardStats(userId: string): Promise<{

@@ -17,7 +17,8 @@ const skipAuth = (req: any, res: any, next: any) => {
 import { 
   insertSponsorSchema, 
   insertReceiptSchema, 
-  insertCostSchema, 
+  insertCostSchema,
+  insertCostItemSchema, 
   insertFundSchema,
   insertFundTransferSchema,
   insertIncomeSourceSchema,
@@ -246,16 +247,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cost routes
+  // Cost routes - новая структура
   app.get("/api/costs", skipAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const search = req.query.search as string;
-      const category = req.query.category as string;
+      const expenseCategoryId = req.query.expenseCategoryId as string;
       const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
       const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;
-      const costs = await storage.getCosts(userId, search, category, fromDate, toDate);
-      res.json(costs);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      if (req.query.paginated === 'true') {
+        const result = await storage.getCostsPaginated(userId, search, expenseCategoryId, fromDate, toDate, page, limit);
+        res.json(result);
+      } else {
+        const costs = await storage.getCosts(userId, search, expenseCategoryId, fromDate, toDate);
+        res.json(costs);
+      }
     } catch (error) {
       console.error("Error fetching costs:", error);
       res.status(500).json({ message: "Failed to fetch costs" });
@@ -320,6 +329,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting cost:", error);
       res.status(500).json({ message: "Failed to delete cost" });
+    }
+  });
+
+  // Cost Items routes  
+  app.get("/api/costs/:costId/items", skipAuth, async (req: any, res) => {
+    try {
+      const { costId } = req.params;
+      const items = await storage.getCostItems(costId);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching cost items:", error);
+      res.status(500).json({ message: "Failed to fetch cost items" });
+    }
+  });
+
+  app.post("/api/costs/:costId/items", skipAuth, async (req: any, res) => {
+    try {
+      const { costId } = req.params;
+      const validatedData = insertCostItemSchema.parse(req.body);
+      const costItem = await storage.createCostItem(validatedData, costId);
+      res.status(201).json(costItem);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating cost item:", error);
+      res.status(500).json({ message: "Failed to create cost item" });
+    }
+  });
+
+  app.put("/api/cost-items/:id", skipAuth, async (req: any, res) => {
+    try {
+      const validatedData = insertCostItemSchema.partial().parse(req.body);
+      const costItem = await storage.updateCostItem(req.params.id, validatedData);
+      if (!costItem) {
+        return res.status(404).json({ message: "Cost item not found" });
+      }
+      res.json(costItem);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating cost item:", error);
+      res.status(500).json({ message: "Failed to update cost item" });
+    }
+  });
+
+  app.delete("/api/cost-items/:id", skipAuth, async (req: any, res) => {
+    try {
+      const deleted = await storage.deleteCostItem(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Cost item not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting cost item:", error);
+      res.status(500).json({ message: "Failed to delete cost item" });
     }
   });
 
