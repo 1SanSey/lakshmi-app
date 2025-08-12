@@ -47,7 +47,7 @@ type CostWithDetails = Cost & {
 
 export default function Costs() {
   const [search, setSearch] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -73,7 +73,7 @@ export default function Costs() {
 
   // Загрузка данных
   const { data: costs = [], isLoading: costsLoading } = useQuery<CostWithDetails[]>({
-    queryKey: ["/api/costs", search, selectedCategoryId, fromDate, toDate],
+    queryKey: ["/api/costs", search, selectedCategoryId === "all" ? "" : selectedCategoryId, fromDate, toDate],
     enabled: isAuthenticated,
     retry: false,
   });
@@ -499,7 +499,7 @@ export default function Costs() {
                   <SelectValue placeholder="Все категории" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Все категории</SelectItem>
+                  <SelectItem value="all">Все категории</SelectItem>
                   {expenseCategories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -540,11 +540,11 @@ export default function Costs() {
               <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold text-gray-600 mb-2">Расходы не найдены</h3>
               <p className="text-gray-500 mb-4">
-                {search || selectedCategoryId || fromDate || toDate
+                {search || (selectedCategoryId && selectedCategoryId !== "all") || fromDate || toDate
                   ? "Попробуйте изменить фильтры поиска"
                   : "Начните добавлять расходы в свою систему"}
               </p>
-              {!search && !selectedCategoryId && !fromDate && !toDate && (
+              {!search && (!selectedCategoryId || selectedCategoryId === "all") && !fromDate && !toDate && (
                 <Button onClick={() => setIsCreateModalOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Добавить первый расход
