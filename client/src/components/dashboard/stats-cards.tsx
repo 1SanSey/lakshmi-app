@@ -25,8 +25,8 @@ export default function StatsCards() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        {[...Array(5)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
           <div key={i} className="stat-card animate-pulse">
             <div className="h-20 bg-muted rounded"></div>
           </div>
@@ -54,8 +54,8 @@ export default function StatsCards() {
       title: "Чистый баланс",
       value: formatCurrency(stats?.netBalance || 0),
       icon: BarChart3,
-      color: (stats?.netBalance || 0) >= 0 ? "text-secondary" : "text-destructive",
-      bgColor: "bg-primary/10",
+      color: "text-blue-800 dark:text-blue-400", // Темно-синий цвет
+      bgColor: "bg-blue-50 dark:bg-blue-950",
     },
     {
       title: "Активные спонсоры",
@@ -64,18 +64,10 @@ export default function StatsCards() {
       color: "text-accent",
       bgColor: "bg-accent/10",
     },
-    {
-      title: "Активные фонды",
-      value: `${stats?.activeFunds || 0} (${(stats?.totalFundPercentage || 0).toFixed(1)}%)`,
-      icon: PiggyBank,
-      color: (stats?.totalFundPercentage || 0) === 100 ? "text-secondary" : 
-             (stats?.totalFundPercentage || 0) > 100 ? "text-destructive" : "text-amber-600",
-      bgColor: "bg-primary/10",
-    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {cards.map((card, index) => (
         <div key={index} className="stat-card">
           <div className="flex items-center justify-between">

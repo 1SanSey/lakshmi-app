@@ -462,6 +462,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/funds/balances", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const fundsWithBalances = await storage.getFundsWithBalances(userId);
+      res.json(fundsWithBalances);
+    } catch (error) {
+      console.error("Error fetching funds with balances:", error);
+      res.status(500).json({ message: "Failed to fetch funds with balances" });
+    }
+  });
+
   // Fund distribution routes
   app.get("/api/receipts/:receiptId/distributions", skipAuth, async (req: any, res) => {
     try {
