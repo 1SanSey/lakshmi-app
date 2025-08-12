@@ -33,8 +33,7 @@ const costFormSchema = insertCostSchema.extend({
   date: z.string().min(1, "Дата обязательна"),
   items: z.array(insertCostItemSchema.extend({
     expenseNomenclatureId: z.string().min(1, "Выберите номенклатуру"),
-    quantity: z.number().min(0.01, "Количество должно быть больше 0"),
-    unitPrice: z.number().min(0, "Цена за единицу не может быть отрицательной"),
+    amount: z.number().min(0.01, "Сумма должна быть больше 0"),
   })).min(1, "Добавьте хотя бы одну позицию"),
 });
 
@@ -101,9 +100,9 @@ export default function Costs() {
       items: [
         {
           expenseNomenclatureId: "",
+          amount: 0,
           quantity: 1,
           unitPrice: 0,
-          amount: 0,
           description: "",
         }
       ],
@@ -209,9 +208,9 @@ export default function Costs() {
       ...currentItems,
       {
         expenseNomenclatureId: "",
+        amount: 0,
         quantity: 1,
         unitPrice: 0,
-        amount: 0,
         description: "",
       }
     ]);
@@ -225,14 +224,7 @@ export default function Costs() {
     }
   };
 
-  const updateItemAmount = (index: number) => {
-    const items = form.getValues("items");
-    const item = items[index];
-    const amount = item.quantity * item.unitPrice;
-    
-    form.setValue(`items.${index}.amount`, amount);
-    updateTotalAmount();
-  };
+
 
   const updateTotalAmount = () => {
     const items = form.getValues("items");
@@ -305,9 +297,9 @@ export default function Costs() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Описание</FormLabel>
+                      <FormLabel>Комментарий</FormLabel>
                       <FormControl>
-                        <Textarea {...field} placeholder="Описание расхода" />
+                        <Input {...field} placeholder="Комментарий к расходу" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -325,7 +317,7 @@ export default function Costs() {
                   
                   {form.watch("items").map((_, index) => (
                     <Card key={index} className="p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FormField
                           control={form.control}
                           name={`items.${index}.expenseNomenclatureId`}
@@ -353,50 +345,6 @@ export default function Costs() {
                         
                         <FormField
                           control={form.control}
-                          name={`items.${index}.quantity`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Количество</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.01"
-                                  {...field}
-                                  onChange={(e) => {
-                                    field.onChange(parseFloat(e.target.value) || 0);
-                                    setTimeout(() => updateItemAmount(index), 0);
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.unitPrice`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Цена за ед.</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.01"
-                                  {...field}
-                                  onChange={(e) => {
-                                    field.onChange(parseFloat(e.target.value) || 0);
-                                    setTimeout(() => updateItemAmount(index), 0);
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
                           name={`items.${index}.amount`}
                           render={({ field }) => (
                             <FormItem>
@@ -406,7 +354,10 @@ export default function Costs() {
                                   type="number" 
                                   step="0.01"
                                   {...field}
-                                  readOnly
+                                  onChange={(e) => {
+                                    field.onChange(parseFloat(e.target.value) || 0);
+                                    setTimeout(() => updateTotalAmount(), 0);
+                                  }}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -427,19 +378,7 @@ export default function Costs() {
                         </div>
                       </div>
                       
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.description`}
-                        render={({ field }) => (
-                          <FormItem className="mt-4">
-                            <FormLabel>Примечание</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="Дополнительное описание позиции" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+
                     </Card>
                   ))}
                 </div>
