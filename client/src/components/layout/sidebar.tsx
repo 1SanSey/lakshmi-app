@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { BarChart3, Handshake, Receipt, CreditCard, PiggyBank, TrendingUp, ArrowLeftRight, Calculator } from "lucide-react";
+import { BarChart3, Handshake, Receipt, CreditCard, PiggyBank, TrendingUp, ArrowLeftRight, Calculator, FileText, Tags, FileBarChart } from "lucide-react";
 
 const navigation = [
   { name: "Обзор", href: "/", icon: BarChart3 },
@@ -8,10 +8,12 @@ const navigation = [
   { name: "Спонсоры", href: "/sponsors", icon: Handshake },
   { name: "Поступления", href: "/receipts", icon: Receipt },
   { name: "Расходы", href: "/costs", icon: CreditCard },
+  { name: "Номенклатура", href: "/nomenclature", icon: FileText },
+  { name: "Статьи расходов", href: "/expense-categories", icon: Tags },
   { name: "Фонды", href: "/funds", icon: PiggyBank },
   { name: "Переводы фондов", href: "/fund-transfers", icon: ArrowLeftRight },
   { name: "Распределение фондов", href: "/fund-distributions", icon: Calculator },
-
+  { name: "Отчеты", href: "/reports", icon: FileBarChart },
 ];
 
 export default function Sidebar() {

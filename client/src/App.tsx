@@ -13,8 +13,10 @@ import Costs from "@/pages/costs";
 import Funds from "@/pages/funds";
 import FundTransfers from "@/pages/fund-transfers";
 import FundDistributions from "@/pages/fund-distributions";
-
 import IncomeSources from "@/pages/income-sources";
+import Nomenclature from "@/pages/nomenclature";
+import ExpenseCategories from "@/pages/expense-categories";
+import Reports from "@/pages/reports";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
@@ -38,6 +40,9 @@ function Router() {
               <Route path="/fund-transfers" component={FundTransfers} />
               <Route path="/fund-distributions" component={FundDistributions} />
               <Route path="/income-sources" component={IncomeSources} />
+              <Route path="/nomenclature" component={Nomenclature} />
+              <Route path="/expense-categories" component={ExpenseCategories} />
+              <Route path="/reports" component={Reports} />
               <Route component={NotFound} />
             </Switch>
           </div>

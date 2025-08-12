@@ -70,13 +70,37 @@ export const receiptItems = pgTable("receipt_items", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Номенклатура расходов - справочник названий расходов
+export const expenseNomenclature = pgTable("expense_nomenclature", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: varchar("description", { length: 500 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Статьи расходов - категории расходов
+export const expenseCategories = pgTable("expense_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: varchar("description", { length: 500 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Costs table (expenses)
 export const costs = pgTable("costs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   date: timestamp("date").notNull(),
   description: varchar("description", { length: 500 }).notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-  category: varchar("category", { length: 100 }).notNull(),
+  nomenclatureId: varchar("nomenclature_id").references(() => expenseNomenclature.id),
+  categoryId: varchar("category_id").references(() => expenseCategories.id),
+  category: varchar("category", { length: 100 }), // Оставляем для обратной совместимости
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -89,6 +113,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   costs: many(costs),
   funds: many(funds),
   incomeSources: many(incomeSources),
+  expenseNomenclature: many(expenseNomenclature),
+  expenseCategories: many(expenseCategories),
 }));
 
 export const sponsorsRelations = relations(sponsors, ({ one, many }) => ({
@@ -183,6 +209,30 @@ export const costsRelations = relations(costs, ({ one }) => ({
     fields: [costs.userId],
     references: [users.id],
   }),
+  nomenclature: one(expenseNomenclature, {
+    fields: [costs.nomenclatureId],
+    references: [expenseNomenclature.id],
+  }),
+  category: one(expenseCategories, {
+    fields: [costs.categoryId],
+    references: [expenseCategories.id],
+  }),
+}));
+
+export const expenseNomenclatureRelations = relations(expenseNomenclature, ({ one, many }) => ({
+  user: one(users, {
+    fields: [expenseNomenclature.userId],
+    references: [users.id],
+  }),
+  costs: many(costs),
+}));
+
+export const expenseCategoriesRelations = relations(expenseCategories, ({ one, many }) => ({
+  user: one(users, {
+    fields: [expenseCategories.userId],
+    references: [users.id],
+  }),
+  costs: many(costs),
 }));
 
 export const fundsRelations = relations(funds, ({ one, many }) => ({
@@ -337,6 +387,20 @@ export const insertManualFundDistributionSchema = createInsertSchema(manualFundD
   createdAt: true,
 });
 
+export const insertExpenseNomenclatureSchema = createInsertSchema(expenseNomenclature).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertExpenseCategorySchema = createInsertSchema(expenseCategories).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -360,6 +424,10 @@ export type FundTransfer = typeof fundTransfers.$inferSelect;
 export type InsertFundTransfer = z.infer<typeof insertFundTransferSchema>;
 export type ManualFundDistribution = typeof manualFundDistributions.$inferSelect;
 export type InsertManualFundDistribution = z.infer<typeof insertManualFundDistributionSchema>;
+export type ExpenseNomenclature = typeof expenseNomenclature.$inferSelect;
+export type InsertExpenseNomenclature = z.infer<typeof insertExpenseNomenclatureSchema>;
+export type ExpenseCategory = typeof expenseCategories.$inferSelect;
+export type InsertExpenseCategory = z.infer<typeof insertExpenseCategorySchema>;
 
 // Distribution History table - tracks all fund distributions
 export const distributionHistory = pgTable("distribution_history", {

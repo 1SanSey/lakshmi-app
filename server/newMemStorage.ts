@@ -25,7 +25,11 @@ import {
   type DistributionHistory,
   type InsertDistributionHistory,
   type DistributionHistoryItem,
-  type InsertDistributionHistoryItem
+  type InsertDistributionHistoryItem,
+  type ExpenseNomenclature,
+  type InsertExpenseNomenclature,
+  type ExpenseCategory,
+  type InsertExpenseCategory
 } from "@shared/schema";
 
 export class NewMemStorage implements IStorage {
@@ -42,6 +46,8 @@ export class NewMemStorage implements IStorage {
   private manualFundDistributions: Map<string, ManualFundDistribution> = new Map();
   private distributionHistory: Map<string, DistributionHistory> = new Map();
   private distributionHistoryItems: Map<string, DistributionHistoryItem> = new Map();
+  private expenseNomenclature: Map<string, ExpenseNomenclature> = new Map();
+  private expenseCategories: Map<string, ExpenseCategory> = new Map();
 
   // User operations
   async getUser(id: string): Promise<User | undefined> {
@@ -938,6 +944,100 @@ export class NewMemStorage implements IStorage {
     distributionsToDelete.forEach(dist => this.fundDistributions.delete(dist.id));
 
     return true;
+  }
+
+  // Expense Nomenclature operations
+  async getExpenseNomenclature(userId: string): Promise<ExpenseNomenclature[]> {
+    return Array.from(this.expenseNomenclature.values())
+      .filter(n => n.userId === userId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getExpenseNomenclatureById(id: string, userId: string): Promise<ExpenseNomenclature | undefined> {
+    const nomenclature = this.expenseNomenclature.get(id);
+    return nomenclature && nomenclature.userId === userId ? nomenclature : undefined;
+  }
+
+  async createExpenseNomenclature(nomenclature: InsertExpenseNomenclature, userId: string): Promise<ExpenseNomenclature> {
+    const id = `expnom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const now = new Date();
+    const newNomenclature: ExpenseNomenclature = {
+      id,
+      userId,
+      name: nomenclature.name,
+      description: nomenclature.description || null,
+      isActive: nomenclature.isActive ?? true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.expenseNomenclature.set(id, newNomenclature);
+    return newNomenclature;
+  }
+
+  async updateExpenseNomenclature(id: string, nomenclature: Partial<InsertExpenseNomenclature>, userId: string): Promise<ExpenseNomenclature | undefined> {
+    const existing = this.expenseNomenclature.get(id);
+    if (!existing || existing.userId !== userId) return undefined;
+    
+    const updated: ExpenseNomenclature = {
+      ...existing,
+      ...nomenclature,
+      updatedAt: new Date(),
+    };
+    this.expenseNomenclature.set(id, updated);
+    return updated;
+  }
+
+  async deleteExpenseNomenclature(id: string, userId: string): Promise<boolean> {
+    const existing = this.expenseNomenclature.get(id);
+    if (!existing || existing.userId !== userId) return false;
+    return this.expenseNomenclature.delete(id);
+  }
+
+  // Expense Categories operations
+  async getExpenseCategories(userId: string): Promise<ExpenseCategory[]> {
+    return Array.from(this.expenseCategories.values())
+      .filter(c => c.userId === userId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getExpenseCategoryById(id: string, userId: string): Promise<ExpenseCategory | undefined> {
+    const category = this.expenseCategories.get(id);
+    return category && category.userId === userId ? category : undefined;
+  }
+
+  async createExpenseCategory(category: InsertExpenseCategory, userId: string): Promise<ExpenseCategory> {
+    const id = `expcat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const now = new Date();
+    const newCategory: ExpenseCategory = {
+      id,
+      userId,
+      name: category.name,
+      description: category.description || null,
+      isActive: category.isActive ?? true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.expenseCategories.set(id, newCategory);
+    return newCategory;
+  }
+
+  async updateExpenseCategory(id: string, category: Partial<InsertExpenseCategory>, userId: string): Promise<ExpenseCategory | undefined> {
+    const existing = this.expenseCategories.get(id);
+    if (!existing || existing.userId !== userId) return undefined;
+    
+    const updated: ExpenseCategory = {
+      ...existing,
+      ...category,
+      updatedAt: new Date(),
+    };
+    this.expenseCategories.set(id, updated);
+    return updated;
+  }
+
+  async deleteExpenseCategory(id: string, userId: string): Promise<boolean> {
+    const existing = this.expenseCategories.get(id);
+    if (!existing || existing.userId !== userId) return false;
+    return this.expenseCategories.delete(id);
   }
 }
 

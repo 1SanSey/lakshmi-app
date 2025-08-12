@@ -23,7 +23,9 @@ import {
   insertIncomeSourceSchema,
   insertIncomeSourceFundDistributionSchema,
   insertReceiptItemSchema,
-  insertManualFundDistributionSchema
+  insertManualFundDistributionSchema,
+  insertExpenseNomenclatureSchema,
+  insertExpenseCategorySchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -739,6 +741,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting distribution history:", error);
       res.status(500).json({ message: "Failed to delete distribution history" });
+    }
+  });
+
+  // Expense Nomenclature routes
+  app.get("/api/expense-nomenclature", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const nomenclature = await storage.getExpenseNomenclature(userId);
+      res.json(nomenclature);
+    } catch (error) {
+      console.error("Error fetching expense nomenclature:", error);
+      res.status(500).json({ message: "Failed to fetch expense nomenclature" });
+    }
+  });
+
+  app.get("/api/expense-nomenclature/:id", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const nomenclature = await storage.getExpenseNomenclatureById(req.params.id, userId);
+      if (!nomenclature) {
+        return res.status(404).json({ message: "Expense nomenclature not found" });
+      }
+      res.json(nomenclature);
+    } catch (error) {
+      console.error("Error fetching expense nomenclature:", error);
+      res.status(500).json({ message: "Failed to fetch expense nomenclature" });
+    }
+  });
+
+  app.post("/api/expense-nomenclature", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertExpenseNomenclatureSchema.parse(req.body);
+      const nomenclature = await storage.createExpenseNomenclature(validatedData, userId);
+      res.status(201).json(nomenclature);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating expense nomenclature:", error);
+      res.status(500).json({ message: "Failed to create expense nomenclature" });
+    }
+  });
+
+  app.put("/api/expense-nomenclature/:id", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertExpenseNomenclatureSchema.partial().parse(req.body);
+      const nomenclature = await storage.updateExpenseNomenclature(req.params.id, validatedData, userId);
+      if (!nomenclature) {
+        return res.status(404).json({ message: "Expense nomenclature not found" });
+      }
+      res.json(nomenclature);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating expense nomenclature:", error);
+      res.status(500).json({ message: "Failed to update expense nomenclature" });
+    }
+  });
+
+  app.delete("/api/expense-nomenclature/:id", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const deleted = await storage.deleteExpenseNomenclature(req.params.id, userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Expense nomenclature not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting expense nomenclature:", error);
+      res.status(500).json({ message: "Failed to delete expense nomenclature" });
+    }
+  });
+
+  // Expense Categories routes
+  app.get("/api/expense-categories", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const categories = await storage.getExpenseCategories(userId);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching expense categories:", error);
+      res.status(500).json({ message: "Failed to fetch expense categories" });
+    }
+  });
+
+  app.get("/api/expense-categories/:id", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const category = await storage.getExpenseCategoryById(req.params.id, userId);
+      if (!category) {
+        return res.status(404).json({ message: "Expense category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      console.error("Error fetching expense category:", error);
+      res.status(500).json({ message: "Failed to fetch expense category" });
+    }
+  });
+
+  app.post("/api/expense-categories", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertExpenseCategorySchema.parse(req.body);
+      const category = await storage.createExpenseCategory(validatedData, userId);
+      res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating expense category:", error);
+      res.status(500).json({ message: "Failed to create expense category" });
+    }
+  });
+
+  app.put("/api/expense-categories/:id", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertExpenseCategorySchema.partial().parse(req.body);
+      const category = await storage.updateExpenseCategory(req.params.id, validatedData, userId);
+      if (!category) {
+        return res.status(404).json({ message: "Expense category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating expense category:", error);
+      res.status(500).json({ message: "Failed to update expense category" });
+    }
+  });
+
+  app.delete("/api/expense-categories/:id", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const deleted = await storage.deleteExpenseCategory(req.params.id, userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Expense category not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting expense category:", error);
+      res.status(500).json({ message: "Failed to delete expense category" });
     }
   });
 
