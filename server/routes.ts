@@ -127,8 +127,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const search = req.query.search as string;
       const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
       const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;
-      const receipts = await storage.getReceipts(userId, search, fromDate, toDate);
-      res.json(receipts);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const result = await storage.getReceiptsPaginated(userId, search, fromDate, toDate, page, limit);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching receipts:", error);
       res.status(500).json({ message: "Failed to fetch receipts" });

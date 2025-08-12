@@ -9,12 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Edit, Trash2, ArrowUpDown } from "lucide-react";
 import ReceiptModal from "@/components/modals/receipt-modal";
+import { Pagination } from "@/components/ui/pagination";
 import type { Receipt } from "@shared/schema";
 
 export default function Receipts() {
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReceipt, setEditingReceipt] = useState<Receipt | null>(null);
   const { toast } = useToast();
@@ -36,10 +39,26 @@ export default function Receipts() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: receipts = [], isLoading: receiptsLoading } = useQuery<(Receipt & { sponsorName?: string })[]>({
-    queryKey: ["/api/receipts", search, fromDate, toDate],
+  const { data: receiptsResponse, isLoading: receiptsLoading } = useQuery<{
+    data: (Receipt & { sponsorName?: string })[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>({
+    queryKey: ["/api/receipts", search, fromDate, toDate, page, limit],
     retry: false,
   });
+
+  const receipts = receiptsResponse?.data || [];
+  const pagination = receiptsResponse?.pagination;
+
+  // Сброс страницы при изменении фильтров
+  useEffect(() => {
+    setPage(1);
+  }, [search, fromDate, toDate]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -237,6 +256,18 @@ export default function Receipts() {
                 )}
               </TableBody>
             </Table>
+            
+            {pagination && (
+              <div className="mt-4">
+                <Pagination
+                  currentPage={pagination.page}
+                  totalPages={pagination.totalPages}
+                  onPageChange={setPage}
+                  totalItems={pagination.total}
+                  itemsPerPage={pagination.limit}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

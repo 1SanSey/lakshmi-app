@@ -141,6 +141,42 @@ export class NewMemStorage implements IStorage {
     })).sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
+  async getReceiptsPaginated(
+    userId: string, 
+    search?: string, 
+    fromDate?: Date, 
+    toDate?: Date,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{
+    data: (Receipt & { sponsorName?: string })[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    // Получаем все записи с фильтрацией
+    const allReceipts = await this.getReceipts(userId, search, fromDate, toDate);
+    
+    // Применяем пагинацию
+    const total = allReceipts.length;
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+    const data = allReceipts.slice(offset, offset + limit);
+    
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages
+      }
+    };
+  }
+
   async getReceipt(id: string, userId: string): Promise<Receipt | undefined> {
     const receipt = this.receipts.get(id);
     return receipt && receipt.userId === userId ? receipt : undefined;
@@ -222,6 +258,41 @@ export class NewMemStorage implements IStorage {
     }
     
     return result.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  async getCostsPaginated(
+    userId: string, 
+    search?: string, 
+    category?: string, 
+    fromDate?: Date, 
+    toDate?: Date,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{
+    data: Cost[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const allCosts = await this.getCosts(userId, search, category, fromDate, toDate);
+    
+    const total = allCosts.length;
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+    const data = allCosts.slice(offset, offset + limit);
+    
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages
+      }
+    };
   }
 
   async getCost(id: string, userId: string): Promise<Cost | undefined> {
