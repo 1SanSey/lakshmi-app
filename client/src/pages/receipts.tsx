@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -7,17 +7,15 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2, ArrowUpDown } from "lucide-react";
+import { Plus, Search, Edit, Trash2, ArrowUpDown, Loader2 } from "lucide-react";
 import ReceiptModal from "@/components/modals/receipt-modal";
-import { Pagination } from "@/components/ui/pagination";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import type { Receipt } from "@shared/schema";
 
 export default function Receipts() {
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit] = useState(20);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReceipt, setEditingReceipt] = useState<Receipt | null>(null);
   const { toast } = useToast();
@@ -39,26 +37,55 @@ export default function Receipts() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: receiptsResponse, isLoading: receiptsLoading } = useQuery<{
-    data: (Receipt & { sponsorName?: string })[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
-  }>({
-    queryKey: ["/api/receipts", search, fromDate, toDate, page, limit],
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: receiptsLoading,
+    refetch
+  } = useInfiniteQuery({
+    queryKey: ["/api/receipts", search, fromDate, toDate],
+    queryFn: ({ pageParam = 1 }) => {
+      const params = new URLSearchParams({
+        page: pageParam.toString(),
+        limit: "20",
+        ...(search && { search }),
+        ...(fromDate && { fromDate }),
+        ...(toDate && { toDate }),
+      });
+      return apiRequest(`/api/receipts?${params}`) as Promise<{
+        data: (Receipt & { sponsorName?: string })[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      }>;
+    },
+    getNextPageParam: (lastPage) => {
+      return lastPage.pagination.page < lastPage.pagination.totalPages 
+        ? lastPage.pagination.page + 1 
+        : undefined;
+    },
     retry: false,
   });
 
-  const receipts = receiptsResponse?.data || [];
-  const pagination = receiptsResponse?.pagination;
+  const receipts = data?.pages.flatMap(page => page.data) || [];
+  const totalReceipts = data?.pages[0]?.pagination.total || 0;
 
-  // Сброс страницы при изменении фильтров
+  // Хук для бесконечной прокрутки
+  const { loadingElementRef } = useInfiniteScroll({
+    hasNextPage: !!hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
+
+  // Сброс при изменении фильтров
   useEffect(() => {
-    setPage(1);
-  }, [search, fromDate, toDate]);
+    refetch();
+  }, [search, fromDate, toDate, refetch]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -71,6 +98,7 @@ export default function Receipts() {
         title: "Успешно",
         description: "Поступление удалено успешно",
       });
+      // Данные автоматически обновятся через invalidateQueries
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -146,7 +174,11 @@ export default function Receipts() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="mb-4 sm:mb-0">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Поступления</h2>
-            <p className="text-gray-600">Отслеживание доходов и поступлений</p>
+            {totalReceipts > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Всего записей: {totalReceipts}
+              </p>
+            )}
           </div>
           <Button 
             onClick={handleAdd}
@@ -257,15 +289,26 @@ export default function Receipts() {
               </TableBody>
             </Table>
             
-            {pagination && (
-              <div className="mt-4">
-                <Pagination
-                  currentPage={pagination.page}
-                  totalPages={pagination.totalPages}
-                  onPageChange={setPage}
-                  totalItems={pagination.total}
-                  itemsPerPage={pagination.limit}
-                />
+            {/* Элемент для бесконечной прокрутки */}
+            {hasNextPage && (
+              <div 
+                ref={loadingElementRef}
+                className="flex justify-center py-4"
+              >
+                {isFetchingNextPage ? (
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-muted-foreground">Загрузка...</span>
+                  </div>
+                ) : (
+                  <div className="h-4" /> // Пустой элемент для триггера загрузки
+                )}
+              </div>
+            )}
+            
+            {!hasNextPage && receipts.length > 0 && (
+              <div className="text-center py-4 text-sm text-muted-foreground">
+                Все записи загружены
               </div>
             )}
           </div>
