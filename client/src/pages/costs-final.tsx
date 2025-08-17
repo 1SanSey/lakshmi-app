@@ -17,6 +17,7 @@ import CostModal from "@/components/modals/cost-modal";
 
 type CostWithDetails = Cost & {
   expenseCategoryName?: string;
+  expenseNomenclatureName?: string;
   fundName?: string;
 };
 
@@ -122,7 +123,7 @@ export default function Costs() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Поиск по описанию..."
+                  placeholder="Поиск по номенклатуре..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10"
@@ -199,7 +200,7 @@ export default function Costs() {
                       <Calendar className="h-5 w-5" />
                       {format(new Date(cost.date), "d MMMM yyyy", { locale: ru })}
                     </CardTitle>
-                    <CardDescription>{cost.description}</CardDescription>
+                    <CardDescription>{cost.expenseNomenclatureName || "Без номенклатуры"}</CardDescription>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge variant="outline">

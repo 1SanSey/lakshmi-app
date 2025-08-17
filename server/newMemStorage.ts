@@ -266,22 +266,26 @@ export class NewMemStorage implements IStorage {
       result = result.filter(c => c.date <= toDate);
     }
     
-    // Добавляем информацию о категории и позициях
+    // Добавляем информацию о категории, номенклатуре и позициях
     return result.map(cost => {
       const category = this.expenseCategories.get(cost.expenseCategoryId);
+      const nomenclature = this.expenseNomenclature.get(cost.expenseNomenclatureId);
+      const fund = this.funds.get(cost.fundId);
       const items = Array.from(this.costItems.values())
         .filter(item => item.costId === cost.id)
         .map(item => {
-          const nomenclature = this.expenseNomenclature.get(item.expenseNomenclatureId);
+          const itemNomenclature = this.expenseNomenclature.get(item.expenseNomenclatureId);
           return {
             ...item,
-            nomenclatureName: nomenclature?.name
+            nomenclatureName: itemNomenclature?.name
           };
         });
         
       return {
         ...cost,
         expenseCategoryName: category?.name,
+        expenseNomenclatureName: nomenclature?.name,
+        fundName: fund?.name,
         items
       };
     }).sort((a, b) => b.date.getTime() - a.date.getTime());
