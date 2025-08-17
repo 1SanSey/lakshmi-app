@@ -193,26 +193,34 @@ export default function Costs() {
         ) : (
           costs.map((cost) => (
             <Card key={cost.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      {format(new Date(cost.date), "d MMMM yyyy", { locale: ru })}
-                    </CardTitle>
-                    <CardDescription>{cost.expenseNomenclatureName || "Без номенклатуры"}</CardDescription>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline">
-                      {cost.expenseCategoryName || "Без категории"}
-                    </Badge>
-                    {cost.fundName && (
-                      <Badge variant="secondary">
-                        {cost.fundName}
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {format(new Date(cost.date), "d MMMM yyyy", { locale: ru })}
+                      </p>
+                    </div>
+                    <h3 className="font-semibold text-foreground mb-2 truncate">
+                      {cost.expenseNomenclatureName || "Без номенклатуры"}
+                    </h3>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-xs">
+                        {cost.expenseCategoryName || "Без категории"}
                       </Badge>
-                    )}
-                    <div className="text-lg font-bold">
-                      {parseFloat(cost.totalAmount.toString()).toLocaleString("ru-RU")} ₽
+                      {cost.fundName && (
+                        <Badge variant="secondary" className="text-xs">
+                          {cost.fundName}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 flex-shrink-0">
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-destructive">
+                        -{parseFloat(cost.totalAmount.toString()).toLocaleString("ru-RU")} ₽
+                      </div>
                     </div>
                     <Button
                       variant="outline"
@@ -224,7 +232,7 @@ export default function Costs() {
                     </Button>
                   </div>
                 </div>
-              </CardHeader>
+              </CardContent>
             </Card>
           ))
         )}

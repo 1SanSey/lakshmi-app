@@ -22,7 +22,7 @@ export default function RecentActivity() {
   });
 
   const { data: fundBalances, isLoading: fundBalancesLoading } = useQuery<FundBalance[]>({
-    queryKey: ["/api/funds/balances"],
+    queryKey: ["/api/funds-with-balances"],
     retry: false,
   });
 
@@ -88,14 +88,14 @@ export default function RecentActivity() {
                     <Minus className="h-4 w-4 text-destructive" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">{cost.description}</p>
+                    <p className="font-medium text-foreground">{cost.expenseNomenclatureName || "Без номенклатуры"}</p>
                     <p className="text-sm text-muted-foreground">
-                      {cost.category} • {format(new Date(cost.date), "dd MMM", { locale: ru })}
+                      {cost.expenseCategoryName || "Без категории"} • {format(new Date(cost.date), "dd MMM", { locale: ru })}
                     </p>
                   </div>
                 </div>
                 <span className="font-semibold text-destructive">
-                  -{formatCurrency(cost.amount)}
+                  -{formatCurrency(cost.totalAmount)}
                 </span>
               </div>
             ))
