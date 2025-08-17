@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { newMemStorage as storage } from "./newMemStorage";
-import { setupAuth, skipAuth } from "./replitAuth";
+import { setupAuth, requireAuth } from "./replitAuth";
 
 // Временный middleware для пропуска аутентификации
 const skipAuth = (req: any, res: any, next: any) => {
@@ -285,10 +285,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/costs", skipAuth, async (req: any, res) => {
+  app.post("/api/costs", async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const validatedData = insertCostSchema.parse(req.body);
+      
+      // Преобразуем данные перед валидацией
+      const requestData = {
+        ...req.body,
+        date: new Date(req.body.date),
+        totalAmount: parseFloat(req.body.totalAmount)
+      };
+      
+      const validatedData = insertCostSchema.parse(requestData);
       const cost = await storage.createCost(validatedData, userId);
       res.status(201).json(cost);
     } catch (error) {

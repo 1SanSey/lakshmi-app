@@ -362,11 +362,12 @@ export const insertReceiptSchema = createInsertSchema(receipts).omit({
   updatedAt: true,
 });
 
-export const insertCostSchema = createInsertSchema(costs).omit({
-  id: true,
-  userId: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCostSchema = z.object({
+  date: z.date(),
+  description: z.string().min(1, "Описание обязательно"),
+  totalAmount: z.number().min(0.01, "Сумма должна быть больше 0"),
+  expenseCategoryId: z.string().min(1, "Выберите категорию расходов"),
+  fundId: z.string().min(1, "Выберите фонд"),
 });
 
 export const insertCostItemSchema = createInsertSchema(costItems).omit({

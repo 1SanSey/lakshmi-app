@@ -94,14 +94,9 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const submitData = {
-        ...data,
-        date: new Date(data.date),
-        totalAmount: parseFloat(data.totalAmount),
-      };
       const url = cost ? `/api/costs/${cost.id}` : "/api/costs";
       const method = cost ? "PUT" : "POST";
-      return await apiRequest(url, method, submitData);
+      return await apiRequest(url, method, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/costs"] });
