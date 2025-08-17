@@ -31,11 +31,14 @@ import {
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Временное отключение аутентификации для всех API-маршрутов
+  app.use("/api", skipAuth);
+  
+  // Auth middleware - отключен для тестирования
+  // await setupAuth(app);
 
   // Auth routes - временно возвращаем фиктивного пользователя
-  app.get('/api/auth/user', skipAuth, async (req: any, res) => {
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
       res.json({
         id: "test_user_123",
@@ -289,22 +292,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       
-      // Преобразуем данные перед валидацией  
+      // Преобразуем данные вручную
       const requestData = {
         ...req.body,
         date: new Date(req.body.date),
-        totalAmount: parseFloat(req.body.totalAmount)
+        totalAmount: String(req.body.totalAmount)  // Принудительно конвертируем в строку
       };
       
+      console.log("Request data:", requestData);
       const validatedData = insertCostSchema.parse(requestData);
+      console.log("Validated data:", validatedData);
       const cost = await storage.createCost(validatedData, userId);
       res.status(201).json(cost);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error:", error.errors);
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error creating cost:", error);
-      res.status(500).json({ message: "Failed to create cost" });
+      res.status(500).json({ message: "Failed to create cost", error: error.message });
     }
   });
 

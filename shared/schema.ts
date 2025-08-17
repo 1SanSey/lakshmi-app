@@ -367,6 +367,8 @@ export const insertCostSchema = createInsertSchema(costs).omit({
   userId: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  totalAmount: z.union([z.string(), z.number()]).transform((val) => String(val)),
 });
 
 export const insertCostItemSchema = createInsertSchema(costItems).omit({

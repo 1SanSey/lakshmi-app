@@ -6,6 +6,16 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Временное отключение аутентификации для всех API запросов
+app.use("/api", (req: any, res, next) => {
+  req.user = {
+    claims: {
+      sub: "test_user_123"
+    }
+  };
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
