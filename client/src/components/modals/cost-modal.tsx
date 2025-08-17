@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { insertCostSchema, type Cost } from "@shared/schema";
+import { insertCostSchema, type Cost, type Fund, type ExpenseCategory } from "@shared/schema";
 import { z } from "zod";
 import {
   Dialog,
@@ -31,20 +31,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const COST_CATEGORIES = [
-  "Офисные принадлежности",
-  "Маркетинг",
-  "Путешествия",
-  "Коммунальные услуги",
-  "Профессиональные услуги",
-  "Оборудование",
-  "Программное обеспечение",
-  "Другое"
-];
+
 
 const formSchema = insertCostSchema.extend({
-  date: z.string().min(1, "Date is required"),
-  amount: z.string().min(1, "Amount is required"),
+  date: z.string().min(1, "Дата обязательна"),
+  totalAmount: z.string().min(1, "Сумма обязательна"),
+  fundId: z.string().min(1, "Выбор фонда обязателен"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -59,13 +51,22 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { data: funds = [] } = useQuery<Fund[]>({
+    queryKey: ["/api/funds-with-balances"],
+  });
+
+  const { data: expenseCategories = [] } = useQuery<ExpenseCategory[]>({
+    queryKey: ["/api/expense-categories"],
+  });
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
       description: "",
-      amount: "",
-      category: "",
+      totalAmount: "",
+      expenseCategoryId: "",
+      fundId: "",
     },
   });
 
@@ -75,15 +76,17 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
         form.reset({
           date: cost.date.toISOString().split('T')[0],
           description: cost.description,
-          amount: cost.amount.toString(),
-          category: cost.category,
+          totalAmount: cost.totalAmount.toString(),
+          expenseCategoryId: cost.expenseCategoryId,
+          fundId: cost.fundId,
         });
       } else {
         form.reset({
           date: new Date().toISOString().split('T')[0],
           description: "",
-          amount: "",
-          category: "",
+          totalAmount: "",
+          expenseCategoryId: "",
+          fundId: "",
         });
       }
     }
@@ -94,7 +97,7 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
       const submitData = {
         ...data,
         date: new Date(data.date),
-        amount: parseFloat(data.amount),
+        totalAmount: parseFloat(data.totalAmount),
       };
       const url = cost ? `/api/costs/${cost.id}` : "/api/costs";
       const method = cost ? "PUT" : "POST";
@@ -103,17 +106,18 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/costs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/funds-with-balances"] });
       toast({
-        title: "Success",
-        description: `Cost ${cost ? "updated" : "created"} successfully`,
+        title: "Успешно",
+        description: `Расход ${cost ? "обновлен" : "создан"} успешно`,
       });
       onClose();
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: "Ошибка авторизации",
+          description: "Вы не авторизованы. Выполняется вход...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -122,31 +126,12 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
         return;
       }
       toast({
-        title: "Error",
-        description: `Failed to ${cost ? "update" : "create"} cost`,
+        title: "Ошибка",
+        description: `Не удалось ${cost ? "обновить" : "создать"} расход`,
         variant: "destructive",
       });
     },
   });
-
-  useEffect(() => {
-    if (cost) {
-      const costDate = new Date(cost.date);
-      form.reset({
-        date: costDate.toISOString().split('T')[0],
-        description: cost.description,
-        amount: cost.amount.toString(),
-        category: cost.category,
-      });
-    } else {
-      form.reset({
-        date: new Date().toISOString().split('T')[0],
-        description: "",
-        amount: "",
-        category: "",
-      });
-    }
-  }, [cost, form]);
 
   const onSubmit = (data: FormData) => {
     mutation.mutate(data);
@@ -199,20 +184,20 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
 
             <FormField
               control={form.control}
-              name="category"
+              name="expenseCategoryId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Категория</FormLabel>
+                  <FormLabel>Категория расходов</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Выберите категорию" />
+                        <SelectValue placeholder="Выберите категорию расходов" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {COST_CATEGORIES.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                      {expenseCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -224,10 +209,35 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
 
             <FormField
               control={form.control}
-              name="amount"
+              name="fundId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Сумма</FormLabel>
+                  <FormLabel>Фонд для списания</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите фонд" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {funds.map((fund) => (
+                        <SelectItem key={fund.id} value={fund.id}>
+                          {fund.name} ({(fund as any).balance?.toLocaleString('ru-RU')}₽)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="totalAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Общая сумма</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">

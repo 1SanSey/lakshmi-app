@@ -328,6 +328,19 @@ export class NewMemStorage implements IStorage {
   }
 
   async createCost(cost: InsertCost, userId: string): Promise<Cost> {
+    // Check if the fund exists and has enough balance
+    const fund = this.funds.get(cost.fundId);
+    if (!fund || fund.userId !== userId) {
+      throw new Error("Фонд не найден");
+    }
+
+    const currentBalance = await this.getFundBalance(cost.fundId);
+    const costAmount = parseFloat(cost.totalAmount.toString());
+    
+    if (currentBalance < costAmount) {
+      throw new Error(`Недостаточно средств в фонде "${fund.name}". Доступно: ${currentBalance.toLocaleString('ru-RU')}₽, требуется: ${costAmount.toLocaleString('ru-RU')}₽`);
+    }
+
     const id = `cost_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date();
     const newCost: Cost = {
@@ -336,6 +349,7 @@ export class NewMemStorage implements IStorage {
       date: cost.date,
       description: cost.description,
       expenseCategoryId: cost.expenseCategoryId,
+      fundId: cost.fundId,
       totalAmount: cost.totalAmount,
       createdAt: now,
       updatedAt: now,
@@ -347,6 +361,26 @@ export class NewMemStorage implements IStorage {
   async updateCost(id: string, cost: Partial<InsertCost>, userId: string): Promise<Cost | undefined> {
     const existing = this.costs.get(id);
     if (!existing || existing.userId !== userId) return undefined;
+    
+    // If fundId or totalAmount is being updated, check fund balance
+    if (cost.fundId || cost.totalAmount) {
+      const fundId = cost.fundId || existing.fundId;
+      const fund = this.funds.get(fundId);
+      if (!fund || fund.userId !== userId) {
+        throw new Error("Фонд не найден");
+      }
+
+      const newAmount = cost.totalAmount ? parseFloat(cost.totalAmount.toString()) : parseFloat(existing.totalAmount.toString());
+      const oldAmount = parseFloat(existing.totalAmount.toString());
+      const currentBalance = await this.getFundBalance(fundId);
+      
+      // Calculate new balance if this cost was already deducted
+      const balanceWithOldCost = fundId === existing.fundId ? currentBalance + oldAmount : currentBalance;
+      
+      if (balanceWithOldCost < newAmount) {
+        throw new Error(`Недостаточно средств в фонде "${fund.name}". Доступно: ${balanceWithOldCost.toLocaleString('ru-RU')}₽, требуется: ${newAmount.toLocaleString('ru-RU')}₽`);
+      }
+    }
     
     const updated: Cost = {
       ...existing,
@@ -671,7 +705,7 @@ export class NewMemStorage implements IStorage {
       return sum + receiptItemsSum;
     }, 0);
 
-    const totalCostsAmount = userCosts.reduce((sum, cost) => sum + parseFloat(cost.amount), 0);
+    const totalCostsAmount = userCosts.reduce((sum, cost) => sum + parseFloat(cost.totalAmount), 0);
 
     return {
       totalReceipts: totalReceiptsAmount,
@@ -761,6 +795,11 @@ export class NewMemStorage implements IStorage {
     const transfersFrom = Array.from(this.fundTransfers.values())
       .filter(transfer => transfer.fromFundId === fundId);
     balance -= transfersFrom.reduce((sum, transfer) => sum + parseFloat(transfer.amount), 0);
+
+    // Subtract costs from this fund
+    const costs = Array.from(this.costs.values())
+      .filter(cost => cost.fundId === fundId);
+    balance -= costs.reduce((sum, cost) => sum + parseFloat(cost.totalAmount), 0);
 
     return balance;
   }

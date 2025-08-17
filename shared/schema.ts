@@ -99,6 +99,7 @@ export const costs = pgTable("costs", {
   description: varchar("description", { length: 500 }).notNull(),
   totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull(),
   expenseCategoryId: varchar("expense_category_id").notNull().references(() => expenseCategories.id, { onDelete: "cascade" }),
+  fundId: varchar("fund_id").notNull().references(() => funds.id, { onDelete: "cascade" }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -222,6 +223,10 @@ export const costsRelations = relations(costs, ({ one, many }) => ({
     fields: [costs.expenseCategoryId],
     references: [expenseCategories.id],
   }),
+  fund: one(funds, {
+    fields: [costs.fundId],
+    references: [funds.id],
+  }),
   costItems: many(costItems),
 }));
 
@@ -264,6 +269,7 @@ export const fundsRelations = relations(funds, ({ one, many }) => ({
   transfersFrom: many(fundTransfers, { relationName: "fromFund" }),
   transfersTo: many(fundTransfers, { relationName: "toFund" }),
   manualDistributions: many(manualFundDistributions),
+  costs: many(costs),
 }));
 
 export const fundDistributionsRelations = relations(fundDistributions, ({ one }) => ({
