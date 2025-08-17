@@ -32,9 +32,11 @@ export default function FundDistributionModal({ isOpen, onClose }: FundDistribut
     queryKey: ["/api/funds"],
   });
 
-  const { data: receipts = [] } = useQuery<Receipt[]>({
+  const { data: receiptsData } = useQuery<{ data: Receipt[]; pagination: any }>({
     queryKey: ["/api/receipts"],
   });
+  
+  const receipts = receiptsData?.data || [];
 
   const { data: incomeSources = [] } = useQuery<IncomeSource[]>({
     queryKey: ["/api/income-sources"],
@@ -81,7 +83,7 @@ export default function FundDistributionModal({ isOpen, onClose }: FundDistribut
     if (isOpen && unallocatedData?.unallocatedAmount && unallocatedData.unallocatedAmount > 0) {
       calculateDistributionPreview();
     }
-  }, [isOpen, unallocatedData]);
+  }, [isOpen, unallocatedData, receipts, funds, incomeSources]);
 
   const calculateDistributionPreview = async () => {
     // Если есть нераспределенные средства, показываем возможность распределения
