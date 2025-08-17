@@ -78,68 +78,81 @@ export default function FundDistributionModal({ isOpen, onClose }: FundDistribut
 
   // Calculate distribution preview when modal opens
   useEffect(() => {
-    if (isOpen && receipts.length > 0 && funds.length > 0 && incomeSources.length > 0) {
+    if (isOpen && unallocatedData?.unallocatedAmount && unallocatedData.unallocatedAmount > 0) {
       calculateDistributionPreview();
     }
-  }, [isOpen, receipts, funds, incomeSources]);
+  }, [isOpen, unallocatedData]);
 
   const calculateDistributionPreview = async () => {
-    // Get undistributed receipts
-    const undistributedReceipts = receipts.filter(receipt => {
-      // For this demo, assume all receipts are undistributed
-      // In real implementation, you'd check if they have fund distributions
-      return receipt.incomeSourceId;
-    });
-
-    if (undistributedReceipts.length === 0) {
+    // Если есть нераспределенные средства, показываем возможность распределения
+    if (!unallocatedData?.unallocatedAmount || unallocatedData.unallocatedAmount <= 0) {
       setDistributionPreviews([]);
       setTotalToDistribute(0);
       return;
     }
 
-    const fundDistributionMap = new Map<string, { percentage: number; amount: number }>();
-    let totalAmount = 0;
+    // Создаем превью для автоматического распределения нераспределенных средств
+    const previews: DistributionPreview[] = [];
+    const totalAmount = unallocatedData.unallocatedAmount;
 
-    // Calculate distribution for each receipt
-    for (const receipt of undistributedReceipts) {
-      if (!receipt.incomeSourceId) continue;
+    // Получаем все поступления без распределений и их источники доходов
+    const undistributedReceipts = receipts.filter(receipt => receipt.incomeSourceId);
+    
+    if (undistributedReceipts.length > 0) {
+      const fundDistributionMap = new Map<string, { percentage: number; amount: number }>();
 
-      const receiptAmount = parseFloat(receipt.amount);
-      totalAmount += receiptAmount;
+      // Рассчитываем распределение для каждого поступления
+      for (const receipt of undistributedReceipts) {
+        if (!receipt.incomeSourceId) continue;
 
-      // Get fund distributions for this income source
-      try {
-        const response = await apiRequest(`/api/income-sources/${receipt.incomeSourceId}/fund-distributions`, "GET");
-        const distributions = await response.json() as IncomeSourceFundDistribution[];
-        
-        for (const distribution of distributions) {
-          const distributionAmount = (receiptAmount * parseFloat(distribution.percentage)) / 100;
+        const receiptAmount = parseFloat(receipt.amount);
+
+        // Получаем настройки распределения для источника дохода
+        try {
+          const response = await apiRequest(`/api/income-sources/${receipt.incomeSourceId}/fund-distributions`, "GET");
+          const distributions = await response.json() as IncomeSourceFundDistribution[];
           
-          if (fundDistributionMap.has(distribution.fundId)) {
-            const existing = fundDistributionMap.get(distribution.fundId)!;
-            existing.amount += distributionAmount;
-          } else {
-            fundDistributionMap.set(distribution.fundId, {
-              percentage: parseFloat(distribution.percentage),
-              amount: distributionAmount
-            });
+          for (const distribution of distributions) {
+            const distributionAmount = (receiptAmount * parseFloat(distribution.percentage)) / 100;
+            
+            if (fundDistributionMap.has(distribution.fundId)) {
+              const existing = fundDistributionMap.get(distribution.fundId)!;
+              existing.amount += distributionAmount;
+            } else {
+              fundDistributionMap.set(distribution.fundId, {
+                percentage: parseFloat(distribution.percentage),
+                amount: distributionAmount
+              });
+            }
           }
+        } catch (error) {
+          console.error("Error fetching fund distributions:", error);
         }
-      } catch (error) {
-        console.error("Error fetching fund distributions:", error);
       }
+
+      // Конвертируем в формат для отображения
+      fundDistributionMap.forEach((data, fundId) => {
+        const fund = funds.find(f => f.id === fundId);
+        if (fund) {
+          previews.push({
+            fundId,
+            fundName: fund.name,
+            percentage: Math.round((data.amount / totalAmount) * 100 * 100) / 100,
+            amount: data.amount
+          });
+        }
+      });
     }
 
-    // Convert to preview format
-    const previews: DistributionPreview[] = Array.from(fundDistributionMap.entries()).map(([fundId, data]) => {
-      const fund = funds.find(f => f.id === fundId);
-      return {
-        fundId,
-        fundName: fund?.name || "Неизвестный фонд",
-        percentage: Math.round((data.amount / totalAmount) * 100 * 100) / 100, // Round to 2 decimals
-        amount: data.amount
-      };
-    });
+    // Если нет настроек распределения, показываем что средства готовы к ручному распределению
+    if (previews.length === 0) {
+      previews.push({
+        fundId: "manual",
+        fundName: "Требует ручного распределения",
+        percentage: 100,
+        amount: totalAmount
+      });
+    }
 
     setDistributionPreviews(previews);
     setTotalToDistribute(totalAmount);
