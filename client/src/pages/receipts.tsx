@@ -46,7 +46,7 @@ export default function Receipts() {
     refetch
   } = useInfiniteQuery({
     queryKey: ["/api/receipts", search, fromDate, toDate],
-    queryFn: ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam = 1 }) => {
       const params = new URLSearchParams({
         page: pageParam.toString(),
         limit: "20",
@@ -54,17 +54,11 @@ export default function Receipts() {
         ...(fromDate && { fromDate }),
         ...(toDate && { toDate }),
       });
-      return apiRequest(`/api/receipts?${params}`) as Promise<{
-        data: (Receipt & { sponsorName?: string })[];
-        pagination: {
-          page: number;
-          limit: number;
-          total: number;
-          totalPages: number;
-        };
-      }>;
+      const response = await apiRequest(`/api/receipts?${params}`, "GET");
+      return await response.json();
     },
-    getNextPageParam: (lastPage) => {
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
       if (!lastPage?.pagination) return undefined;
       return lastPage.pagination.page < lastPage.pagination.totalPages 
         ? lastPage.pagination.page + 1 
@@ -73,7 +67,7 @@ export default function Receipts() {
     retry: false,
   });
 
-  const receipts = data?.pages.flatMap(page => page?.data || []) || [];
+  const receipts = data?.pages.flatMap((page: any) => page?.data || []) || [];
   const totalReceipts = data?.pages?.[0]?.pagination?.total || 0;
 
   // Хук для бесконечной прокрутки
