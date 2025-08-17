@@ -922,7 +922,7 @@ export class NewMemStorage implements IStorage {
     }
 
     // Create history items for each fund that received money
-    for (const [fundId, amount] of distributionAmounts) {
+    distributionAmounts.forEach((amount, fundId) => {
       // Calculate percentage of total
       const percentage = (amount / unallocatedAmount) * 100;
       
@@ -936,7 +936,7 @@ export class NewMemStorage implements IStorage {
         createdAt: new Date(),
       };
       this.distributionHistoryItems.set(historyItemId, historyItem);
-    }
+    });
   }
 
   // Distribution History operations
