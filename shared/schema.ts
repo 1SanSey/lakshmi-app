@@ -96,7 +96,7 @@ export const expenseCategories = pgTable("expense_categories", {
 export const costs = pgTable("costs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   date: timestamp("date").notNull(),
-  description: varchar("description", { length: 500 }).notNull(),
+  expenseNomenclatureId: varchar("expense_nomenclature_id").notNull().references(() => expenseNomenclature.id, { onDelete: "cascade" }),
   totalAmount: decimal("total_amount", { precision: 12, scale: 2 }).notNull(),
   expenseCategoryId: varchar("expense_category_id").notNull().references(() => expenseCategories.id, { onDelete: "cascade" }),
   fundId: varchar("fund_id").notNull().references(() => funds.id, { onDelete: "cascade" }),
@@ -362,12 +362,11 @@ export const insertReceiptSchema = createInsertSchema(receipts).omit({
   updatedAt: true,
 });
 
-export const insertCostSchema = z.object({
-  date: z.date(),
-  description: z.string().min(1, "Описание обязательно"),
-  totalAmount: z.number().min(0.01, "Сумма должна быть больше 0"),
-  expenseCategoryId: z.string().min(1, "Выберите категорию расходов"),
-  fundId: z.string().min(1, "Выберите фонд"),
+export const insertCostSchema = createInsertSchema(costs).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertCostItemSchema = createInsertSchema(costItems).omit({

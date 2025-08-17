@@ -5,7 +5,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { insertCostSchema, type Cost, type Fund, type ExpenseCategory } from "@shared/schema";
+import { insertCostSchema, type Cost, type Fund, type ExpenseCategory, type ExpenseNomenclature } from "@shared/schema";
 import { z } from "zod";
 import {
   Dialog,
@@ -33,9 +33,11 @@ import { Button } from "@/components/ui/button";
 
 
 
-const formSchema = insertCostSchema.extend({
+const formSchema = z.object({
   date: z.string().min(1, "Дата обязательна"),
+  expenseNomenclatureId: z.string().min(1, "Выбор номенклатуры обязателен"),
   totalAmount: z.string().min(1, "Сумма обязательна"),
+  expenseCategoryId: z.string().min(1, "Выбор категории обязателен"),
   fundId: z.string().min(1, "Выбор фонда обязателен"),
 });
 
@@ -59,11 +61,15 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
     queryKey: ["/api/expense-categories"],
   });
 
+  const { data: expenseNomenclature = [] } = useQuery<ExpenseNomenclature[]>({
+    queryKey: ["/api/expense-nomenclature"],
+  });
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
-      description: "",
+      expenseNomenclatureId: "",
       totalAmount: "",
       expenseCategoryId: "",
       fundId: "",
@@ -75,7 +81,7 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
       if (cost) {
         form.reset({
           date: cost.date.toISOString().split('T')[0],
-          description: cost.description,
+          expenseNomenclatureId: cost.expenseNomenclatureId || "",
           totalAmount: cost.totalAmount.toString(),
           expenseCategoryId: cost.expenseCategoryId,
           fundId: cost.fundId,
@@ -83,7 +89,7 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
       } else {
         form.reset({
           date: new Date().toISOString().split('T')[0],
-          description: "",
+          expenseNomenclatureId: "",
           totalAmount: "",
           expenseCategoryId: "",
           fundId: "",
@@ -162,16 +168,24 @@ export default function CostModal({ isOpen, onClose, cost }: CostModalProps) {
 
             <FormField
               control={form.control}
-              name="description"
+              name="expenseNomenclatureId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Описание</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Введите описание"
-                      {...field}
-                    />
-                  </FormControl>
+                  <FormLabel>Номенклатура расходов *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите номенклатуру расходов" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {expenseNomenclature.map((nomenclature) => (
+                        <SelectItem key={nomenclature.id} value={nomenclature.id}>
+                          {nomenclature.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

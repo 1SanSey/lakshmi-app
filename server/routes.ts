@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { newMemStorage as storage } from "./newMemStorage";
-import { setupAuth, requireAuth } from "./replitAuth";
+import { setupAuth } from "./replitAuth";
 
 // Временный middleware для пропуска аутентификации
 const skipAuth = (req: any, res: any, next: any) => {
@@ -289,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       
-      // Преобразуем данные перед валидацией
+      // Преобразуем данные перед валидацией  
       const requestData = {
         ...req.body,
         date: new Date(req.body.date),

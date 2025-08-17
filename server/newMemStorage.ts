@@ -347,10 +347,10 @@ export class NewMemStorage implements IStorage {
       id,
       userId,
       date: cost.date,
-      description: cost.description,
+      expenseNomenclatureId: cost.expenseNomenclatureId,
       expenseCategoryId: cost.expenseCategoryId,
       fundId: cost.fundId,
-      totalAmount: cost.totalAmount,
+      totalAmount: costAmount.toString(),
       createdAt: now,
       updatedAt: now,
     };
