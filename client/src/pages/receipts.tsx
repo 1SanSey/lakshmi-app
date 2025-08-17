@@ -65,6 +65,7 @@ export default function Receipts() {
       }>;
     },
     getNextPageParam: (lastPage) => {
+      if (!lastPage?.pagination) return undefined;
       return lastPage.pagination.page < lastPage.pagination.totalPages 
         ? lastPage.pagination.page + 1 
         : undefined;
@@ -72,8 +73,8 @@ export default function Receipts() {
     retry: false,
   });
 
-  const receipts = data?.pages.flatMap(page => page.data) || [];
-  const totalReceipts = data?.pages[0]?.pagination.total || 0;
+  const receipts = data?.pages.flatMap(page => page?.data || []) || [];
+  const totalReceipts = data?.pages?.[0]?.pagination?.total || 0;
 
   // Хук для бесконечной прокрутки
   const { loadingElementRef } = useInfiniteScroll({
