@@ -332,17 +332,19 @@ export class NewMemStorage implements IStorage {
   }
 
   async createCost(cost: InsertCost, userId: string): Promise<Cost> {
-    // Check if the fund exists and has enough balance
+    // Check if the fund exists
     const fund = this.funds.get(cost.fundId);
     if (!fund || fund.userId !== userId) {
       throw new Error("Фонд не найден");
     }
 
-    const currentBalance = await this.getFundBalance(cost.fundId);
+    // Check fund balance on the expense date
+    const expenseDate = new Date(cost.date);
+    const balanceOnDate = await this.getFundBalanceOnDate(cost.fundId, expenseDate);
     const costAmount = parseFloat(cost.totalAmount.toString());
     
-    if (currentBalance < costAmount) {
-      throw new Error(`Недостаточно средств в фонде "${fund.name}". Доступно: ${currentBalance.toLocaleString('ru-RU')}₽, требуется: ${costAmount.toLocaleString('ru-RU')}₽`);
+    if (balanceOnDate < costAmount) {
+      throw new Error(`Недостаточно средств в фонде "${fund.name}" на дату ${expenseDate.toLocaleDateString('ru-RU')}. Доступно: ${balanceOnDate.toLocaleString('ru-RU')}₽, требуется: ${costAmount.toLocaleString('ru-RU')}₽`);
     }
 
     const id = `cost_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -819,6 +821,42 @@ export class NewMemStorage implements IStorage {
     // Subtract costs from this fund
     const costs = Array.from(this.costs.values())
       .filter(cost => cost.fundId === fundId);
+    balance -= costs.reduce((sum, cost) => sum + parseFloat(cost.totalAmount), 0);
+
+    return balance;
+  }
+
+  // Get fund balance on a specific date
+  async getFundBalanceOnDate(fundId: string, targetDate: Date): Promise<number> {
+    const fund = this.funds.get(fundId);
+    if (!fund) return 0;
+
+    let balance = parseFloat(fund.initialBalance || "0");
+
+    // Add money from fund distributions (receipts) up to the target date
+    const distributions = Array.from(this.fundDistributions.values())
+      .filter(dist => {
+        if (dist.fundId !== fundId) return false;
+        // Get the receipt date for this distribution
+        const receipt = this.receipts.get(dist.receiptId);
+        if (!receipt) return false;
+        return new Date(receipt.date) <= targetDate;
+      });
+    balance += distributions.reduce((sum, dist) => sum + parseFloat(dist.amount), 0);
+
+    // Add money transferred TO this fund up to the target date
+    const transfersTo = Array.from(this.fundTransfers.values())
+      .filter(transfer => transfer.toFundId === fundId && new Date(transfer.createdAt) <= targetDate);
+    balance += transfersTo.reduce((sum, transfer) => sum + parseFloat(transfer.amount), 0);
+
+    // Subtract money transferred FROM this fund up to the target date
+    const transfersFrom = Array.from(this.fundTransfers.values())
+      .filter(transfer => transfer.fromFundId === fundId && new Date(transfer.createdAt) <= targetDate);
+    balance -= transfersFrom.reduce((sum, transfer) => sum + parseFloat(transfer.amount), 0);
+
+    // Subtract costs from this fund up to the target date (excluding the cost being created)
+    const costs = Array.from(this.costs.values())
+      .filter(cost => cost.fundId === fundId && new Date(cost.date) < targetDate);
     balance -= costs.reduce((sum, cost) => sum + parseFloat(cost.totalAmount), 0);
 
     return balance;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import type { Cost, ExpenseCategory } from "@shared/schema";
 import CostModal from "@/components/modals/cost-modal";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
 type CostWithDetails = Cost & {
   expenseCategoryName?: string;
@@ -48,11 +49,46 @@ export default function Costs() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  // Загрузка данных
-  const { data: costs = [], isLoading: costsLoading } = useQuery<CostWithDetails[]>({
+  // Загрузка данных с пагинацией
+  const {
+    data: costsData,
+    isLoading: costsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch
+  } = useInfiniteQuery({
     queryKey: ["/api/costs", search, selectedCategoryId === "all" ? "" : selectedCategoryId, fromDate, toDate],
+    queryFn: ({ pageParam = 1 }) => {
+      const params = new URLSearchParams({
+        page: pageParam.toString(),
+        limit: "20",
+        ...(search && { search }),
+        ...(selectedCategoryId !== "all" && { expenseCategoryId: selectedCategoryId }),
+        ...(fromDate && { fromDate }),
+        ...(toDate && { toDate })
+      });
+      return fetch(`/api/costs?${params}`).then(res => res.json());
+    },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pagination && lastPage.pagination.page < lastPage.pagination.totalPages) {
+        return lastPage.pagination.page + 1;
+      }
+      return undefined;
+    },
     enabled: isAuthenticated,
     retry: false,
+  });
+
+  // Flatten all pages into single array
+  const costs = costsData?.pages?.flatMap(page => page.data) || [];
+
+  // Setup infinite scroll
+  const { lastElementRef } = useInfiniteScroll({
+    loading: isFetchingNextPage,
+    hasNextPage: hasNextPage || false,
+    onLoadMore: fetchNextPage,
+    rootMargin: "100px",
   });
 
   const { data: expenseCategories = [] } = useQuery<ExpenseCategory[]>({
@@ -191,56 +227,76 @@ export default function Costs() {
             </CardContent>
           </Card>
         ) : (
-          costs.map((cost) => (
-            <Card key={cost.id} className="overflow-hidden">
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                  {/* Дата */}
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {format(new Date(cost.date), "d MMMM yyyy", { locale: ru })}
-                    </span>
-                  </div>
-                  
-                  {/* Номенклатура */}
-                  <div className="lg:col-span-1">
-                    <h3 className="font-semibold text-foreground break-words">
-                      {cost.expenseNomenclatureName || "Без номенклатуры"}
-                    </h3>
-                  </div>
-                  
-                  {/* Категория и фонд */}
-                  <div className="flex flex-col gap-1">
-                    <Badge variant="outline" className="text-xs w-fit">
-                      {cost.expenseCategoryName || "Без категории"}
-                    </Badge>
-                    {cost.fundName && (
-                      <Badge variant="secondary" className="text-xs w-fit">
-                        {cost.fundName}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  {/* Сумма и действия */}
-                  <div className="flex items-center justify-between lg:justify-end gap-4">
-                    <div className="text-lg font-bold text-destructive whitespace-nowrap">
-                      -{parseFloat(cost.totalAmount.toString()).toLocaleString("ru-RU")} ₽
+          <>
+            {costs.map((cost, index) => (
+              <Card 
+                key={cost.id} 
+                className="overflow-hidden"
+                ref={index === costs.length - 1 ? lastElementRef : null}
+              >
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    {/* Дата */}
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {format(new Date(cost.date), "d MMMM yyyy", { locale: ru })}
+                      </span>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteCost(cost.id)}
-                      disabled={deleteCostMutation.isPending}
-                      className="flex-shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    
+                    {/* Номенклатура */}
+                    <div className="lg:col-span-1">
+                      <h3 className="font-semibold text-foreground break-words">
+                        {cost.expenseNomenclatureName || "Без номенклатуры"}
+                      </h3>
+                    </div>
+                    
+                    {/* Категория и фонд */}
+                    <div className="flex flex-col gap-1">
+                      <Badge variant="outline" className="text-xs w-fit">
+                        {cost.expenseCategoryName || "Без категории"}
+                      </Badge>
+                      {cost.fundName && (
+                        <Badge variant="secondary" className="text-xs w-fit">
+                          {cost.fundName}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* Сумма и действия */}
+                    <div className="flex items-center justify-between lg:justify-end gap-4">
+                      <div className="text-lg font-bold text-destructive whitespace-nowrap">
+                        -{parseFloat(cost.totalAmount.toString()).toLocaleString("ru-RU")} ₽
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteCost(cost.id)}
+                        disabled={deleteCostMutation.isPending}
+                        className="flex-shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            ))}
+            
+            {/* Loading indicator for infinite scroll */}
+            {isFetchingNextPage && (
+              <div className="text-center py-4">
+                <div className="animate-pulse">Загрузка дополнительных расходов...</div>
+              </div>
+            )}
+            
+            {/* End of list indicator */}
+            {!hasNextPage && costs.length > 0 && (
+              <div className="text-center py-4 text-muted-foreground text-sm">
+                Все расходы загружены ({costs.length} записей)
+              </div>
+            )}
+          </>
         )}
       </div>
 

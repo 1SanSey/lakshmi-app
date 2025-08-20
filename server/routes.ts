@@ -261,13 +261,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
       
-      if (req.query.paginated === 'true') {
-        const result = await storage.getCostsPaginated(userId, search, expenseCategoryId, fromDate, toDate, page, limit);
-        res.json(result);
-      } else {
-        const costs = await storage.getCosts(userId, search, expenseCategoryId, fromDate, toDate);
-        res.json(costs);
-      }
+      // Always use pagination for consistency with other endpoints
+      const result = await storage.getCostsPaginated(userId, search, expenseCategoryId, fromDate, toDate, page, limit);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching costs:", error);
       res.status(500).json({ message: "Failed to fetch costs" });
