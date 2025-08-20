@@ -722,22 +722,38 @@ export class NewMemStorage implements IStorage {
   }
 
   async getRecentActivity(userId: string, limit: number = 10): Promise<{
-    recentReceipts: (Receipt & { sponsorName?: string })[];
-    recentCosts: Cost[];
+    recentReceipts: (Receipt & { sponsorName?: string; incomeSourceName?: string })[];
+    recentCosts: (Cost & { expenseNomenclatureName?: string; expenseCategoryName?: string })[];
   }> {
     const userReceipts = Array.from(this.receipts.values())
       .filter(r => r.userId === userId)
       .sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime())
       .slice(0, limit)
-      .map(receipt => ({
-        ...receipt,
-        sponsorName: undefined as string | undefined
-      }));
+      .map(receipt => {
+        const sponsor = receipt.sponsorId ? this.sponsors.get(receipt.sponsorId) : undefined;
+        const incomeSource = receipt.incomeSourceId ? this.incomeSources.get(receipt.incomeSourceId) : undefined;
+        
+        return {
+          ...receipt,
+          sponsorName: sponsor?.name,
+          incomeSourceName: incomeSource?.name
+        };
+      });
 
     const userCosts = Array.from(this.costs.values())
       .filter(c => c.userId === userId)
       .sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime())
-      .slice(0, limit);
+      .slice(0, limit)
+      .map(cost => {
+        const nomenclature = this.expenseNomenclature.get(cost.expenseNomenclatureId);
+        const category = this.expenseCategories.get(cost.expenseCategoryId);
+        
+        return {
+          ...cost,
+          expenseNomenclatureName: nomenclature?.name,
+          expenseCategoryName: category?.name
+        };
+      });
 
     return {
       recentReceipts: userReceipts,

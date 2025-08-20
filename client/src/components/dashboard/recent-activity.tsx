@@ -5,8 +5,8 @@ import { ru } from "date-fns/locale";
 import type { Receipt, Cost } from "@shared/schema";
 
 interface RecentActivity {
-  recentReceipts: (Receipt & { sponsorName?: string })[];
-  recentCosts: Cost[];
+  recentReceipts: (Receipt & { sponsorName?: string; incomeSourceName?: string })[];
+  recentCosts: (Cost & { expenseNomenclatureName?: string; expenseCategoryName?: string })[];
 }
 
 interface FundBalance {
@@ -60,9 +60,9 @@ export default function RecentActivity() {
                     <Plus className="h-4 w-4 text-secondary" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground truncate">{receipt.description}</p>
+                    <p className="font-medium text-foreground truncate">{receipt.incomeSourceName || receipt.description}</p>
                     <p className="text-sm text-muted-foreground truncate">
-                      {receipt.sponsorName ? `От ${receipt.sponsorName}` : "Прямое"} • {format(new Date(receipt.date), "dd MMM", { locale: ru })}
+                      {receipt.sponsorName ? `От ${receipt.sponsorName}` : (receipt.incomeSourceName ? "Источник" : "Прямое")} • {format(new Date(receipt.date), "dd MMM", { locale: ru })}
                     </p>
                   </div>
                 </div>
