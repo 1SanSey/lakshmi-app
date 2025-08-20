@@ -981,6 +981,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reports API
+  app.get("/api/reports/fund-balance/:dateFrom/:dateTo", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { dateFrom, dateTo } = req.params;
+      
+      // Get all funds for the user
+      const funds = await storage.getFundsWithBalances(userId);
+      
+      // Get distribution history to calculate period income
+      const distributionHistory = await storage.getDistributionHistoryWithItems(userId);
+      const costs = await storage.getCosts(userId);
+      
+      // Filter data by date range
+      const startDate = new Date(dateFrom);
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999); // End of day
+      
+      // Filter distributions within period
+      const periodDistributions = distributionHistory.filter((dist: any) => {
+        const distDate = new Date(dist.createdAt);
+        return distDate >= startDate && distDate <= endDate;
+      });
+      
+      // Filter costs within period
+      const periodCosts = costs.filter((cost: any) => {
+        const costDate = new Date(cost.date);
+        return costDate >= startDate && costDate <= endDate;
+      });
+      
+      // Calculate fund balances and movements
+      const fundBalanceReport = funds.map((fund: any) => {
+        // Calculate income from distributions in period
+        let periodIncome = 0;
+        periodDistributions.forEach((dist: any) => {
+          if (dist.items && Array.isArray(dist.items)) {
+            const fundItems = dist.items.filter((item: any) => item.fundId === fund.id);
+            periodIncome += fundItems.reduce((sum: number, item: any) => sum + parseFloat(item.amount), 0);
+          }
+        });
+        
+        // Calculate expenses in period
+        const fundCosts = periodCosts.filter((cost: any) => cost.fundId === fund.id);
+        const periodExpenses = fundCosts.reduce((sum: number, cost: any) => sum + parseFloat(cost.totalAmount), 0);
+        
+        // Current balance
+        const currentBalance = parseFloat(fund.balance);
+        
+        // Opening balance = current - period income + period expenses
+        const openingBalance = Math.max(0, currentBalance - periodIncome + periodExpenses);
+        
+        return {
+          fundName: fund.name,
+          openingBalance: openingBalance,
+          income: periodIncome,
+          expenses: periodExpenses,
+          currentBalance: currentBalance
+        };
+      });
+      
+      res.json(fundBalanceReport);
+    } catch (error) {
+      console.error("Error generating fund balance report:", error);
+      res.status(500).json({ message: "Failed to generate fund balance report" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

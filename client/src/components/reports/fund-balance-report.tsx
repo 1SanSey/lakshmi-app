@@ -31,32 +31,7 @@ export default function FundBalanceReport() {
     setShowReport(false);
   };
 
-  // Mock data for demonstration
-  const mockData = [
-    {
-      fundName: "Основной фонд",
-      openingBalance: 150000,
-      income: 45000,
-      expenses: 22000,
-      currentBalance: 173000
-    },
-    {
-      fundName: "Резервный фонд",
-      openingBalance: 80000,
-      income: 15000,
-      expenses: 5000,
-      currentBalance: 90000
-    },
-    {
-      fundName: "Развитие",
-      openingBalance: 30000,
-      income: 12000,
-      expenses: 8000,
-      currentBalance: 34000
-    }
-  ];
-
-  const displayData = reportData || (showReport ? mockData : []);
+  const displayData = reportData || [];
   const dataArray = Array.isArray(displayData) ? displayData : [];
   const totals = dataArray.reduce(
     (acc: any, fund: any) => ({
