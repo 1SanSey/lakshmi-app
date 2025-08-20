@@ -1108,39 +1108,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { dateFrom, dateTo } = req.params;
       
       const receipts = await storage.getReceipts(userId);
-      const sponsors = await storage.getSponsors(userId);
       
       // Filter receipts by date range
       const startDate = new Date(dateFrom);
       const endDate = new Date(dateTo);
       endDate.setHours(23, 59, 59, 999);
       
+      // Filter receipts that have sponsorName and are within date range
       const periodReceipts = receipts.filter((receipt: any) => {
         const receiptDate = new Date(receipt.date);
-        return receiptDate >= startDate && receiptDate <= endDate && receipt.sponsorId;
+        return receiptDate >= startDate && receiptDate <= endDate && receipt.sponsorName;
       });
       
-      // Group by sponsor
+      // Group by sponsor name
       const sponsorMap = new Map();
       
       periodReceipts.forEach((receipt: any) => {
-        if (!sponsorMap.has(receipt.sponsorId)) {
-          const sponsor = sponsors.find((s: any) => s.id === receipt.sponsorId);
-          if (sponsor) {
-            sponsorMap.set(receipt.sponsorId, {
-              sponsorName: sponsor.name,
-              phone: sponsor.phone,
-              totalAmount: 0,
-              donationsCount: 0
-            });
-          }
+        const sponsorName = receipt.sponsorName;
+        
+        if (!sponsorMap.has(sponsorName)) {
+          sponsorMap.set(sponsorName, {
+            sponsorName: sponsorName,
+            phone: "Не указан", // Since we don't have sponsor phone in receipts
+            totalAmount: 0,
+            donationsCount: 0
+          });
         }
         
-        if (sponsorMap.has(receipt.sponsorId)) {
-          const sponsorData = sponsorMap.get(receipt.sponsorId);
-          sponsorData.totalAmount += parseFloat(receipt.amount);
-          sponsorData.donationsCount += 1;
-        }
+        const sponsorData = sponsorMap.get(sponsorName);
+        sponsorData.totalAmount += parseFloat(receipt.amount);
+        sponsorData.donationsCount += 1;
       });
       
       const reportData = Array.from(sponsorMap.values());
