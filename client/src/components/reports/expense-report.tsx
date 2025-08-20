@@ -15,7 +15,7 @@ export default function ExpenseReport() {
 
   const { data: reportData, isLoading } = useQuery({
     queryKey: ["/api/reports/expenses", dateFrom, dateTo],
-    enabled: showReport && dateFrom && dateTo,
+    enabled: Boolean(showReport && dateFrom && dateTo),
     retry: false,
   });
 
@@ -59,9 +59,10 @@ export default function ExpenseReport() {
   ];
 
   const displayData = reportData || (showReport ? mockData : []);
+  const dataArray = Array.isArray(displayData) ? displayData : [];
   
-  const totalAmount = displayData.reduce(
-    (total, category) => total + category.expenses.reduce((sum, expense) => sum + expense.amount, 0),
+  const totalAmount = dataArray.reduce(
+    (total: number, category: any) => total + category.expenses.reduce((sum: number, expense: any) => sum + expense.amount, 0),
     0
   );
 
@@ -112,10 +113,10 @@ export default function ExpenseReport() {
               <div className="animate-pulse">
                 <div className="h-64 bg-muted rounded"></div>
               </div>
-            ) : displayData.length > 0 ? (
+            ) : dataArray.length > 0 ? (
               <div className="space-y-6">
-                {displayData.map((category, categoryIndex) => {
-                  const categoryTotal = category.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+                {dataArray.map((category: any, categoryIndex: number) => {
+                  const categoryTotal = category.expenses.reduce((sum: number, expense: any) => sum + expense.amount, 0);
                   const categoryPercentage = totalAmount > 0 ? (categoryTotal / totalAmount * 100).toFixed(1) : 0;
 
                   return (
@@ -138,7 +139,7 @@ export default function ExpenseReport() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {category.expenses.map((expense, expenseIndex) => {
+                            {category.expenses.map((expense: any, expenseIndex: number) => {
                               const expensePercentage = categoryTotal > 0 ? (expense.amount / categoryTotal * 100).toFixed(1) : 0;
                               return (
                                 <TableRow key={expenseIndex}>

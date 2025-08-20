@@ -146,7 +146,7 @@ export default function RecentActivity() {
                         currency: 'RUB',
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
-                      }).format(parseFloat(fund.balance))}
+                      }).format(parseFloat(fund.balance.toString()))}
                     </span>
                   </div>
                 </div>

@@ -15,7 +15,7 @@ export default function SponsorReport() {
 
   const { data: reportData, isLoading } = useQuery({
     queryKey: ["/api/reports/sponsors", dateFrom, dateTo],
-    enabled: showReport && dateFrom && dateTo,
+    enabled: Boolean(showReport && dateFrom && dateTo),
     retry: false,
   });
 
@@ -60,11 +60,12 @@ export default function SponsorReport() {
   ];
 
   const displayData = reportData || (showReport ? mockData : []);
-  const totalAmount = displayData.reduce((sum, sponsor) => sum + sponsor.totalAmount, 0);
-  const totalDonations = displayData.reduce((sum, sponsor) => sum + sponsor.donationsCount, 0);
+  const dataArray = Array.isArray(displayData) ? displayData : [];
+  const totalAmount = dataArray.reduce((sum: number, sponsor: any) => sum + sponsor.totalAmount, 0);
+  const totalDonations = dataArray.reduce((sum: number, sponsor: any) => sum + sponsor.donationsCount, 0);
 
   // Sort by total amount descending
-  const sortedData = [...displayData].sort((a, b) => b.totalAmount - a.totalAmount);
+  const sortedData = [...dataArray].sort((a: any, b: any) => b.totalAmount - a.totalAmount);
 
   return (
     <Card>

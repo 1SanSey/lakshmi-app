@@ -15,7 +15,7 @@ export default function FundBalanceReport() {
 
   const { data: reportData, isLoading } = useQuery({
     queryKey: ["/api/reports/fund-balance", dateFrom, dateTo],
-    enabled: showReport && dateFrom && dateTo,
+    enabled: Boolean(showReport && dateFrom && dateTo),
     retry: false,
   });
 
@@ -57,8 +57,9 @@ export default function FundBalanceReport() {
   ];
 
   const displayData = reportData || (showReport ? mockData : []);
-  const totals = displayData.reduce(
-    (acc, fund) => ({
+  const dataArray = Array.isArray(displayData) ? displayData : [];
+  const totals = dataArray.reduce(
+    (acc: any, fund: any) => ({
       openingBalance: acc.openingBalance + fund.openingBalance,
       income: acc.income + fund.income,
       expenses: acc.expenses + fund.expenses,
@@ -114,7 +115,7 @@ export default function FundBalanceReport() {
               <div className="animate-pulse">
                 <div className="h-64 bg-muted rounded"></div>
               </div>
-            ) : displayData.length > 0 ? (
+            ) : dataArray.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -127,7 +128,7 @@ export default function FundBalanceReport() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {displayData.map((fund, index) => (
+                    {dataArray.map((fund: any, index: number) => (
                       <TableRow key={index}>
                         <TableCell className="font-medium">{fund.fundName}</TableCell>
                         <TableCell className="text-right">
