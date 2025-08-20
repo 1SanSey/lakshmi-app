@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { newMemStorage as storage } from "./newMemStorage";
-import { requireAuth, isUnauthorizedError } from "./replitAuth";
+import { isAuthenticated as requireAuth } from "./replitAuth";
 import { 
   insertSponsorSchema, 
   insertReceiptSchema, 
@@ -28,9 +28,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(user);
     } catch (error) {
-      if (isUnauthorizedError(error)) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }

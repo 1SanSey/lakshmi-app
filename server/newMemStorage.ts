@@ -75,22 +75,6 @@ export class NewMemStorage implements IStorage {
     return newUser;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const now = new Date();
-    const userId = userData.id || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const user: User = {
-      id: userId,
-      email: userData.email || null,
-      firstName: userData.firstName || null,
-      lastName: userData.lastName || null,
-      profileImageUrl: userData.profileImageUrl || null,
-      createdAt: this.users.get(userId)?.createdAt || now,
-      updatedAt: now,
-    };
-    this.users.set(userId, user);
-    return user;
-  }
-
   // Sponsor operations
   async getSponsors(userId: string, search?: string): Promise<Sponsor[]> {
     let result = Array.from(this.sponsors.values()).filter(s => s.userId === userId);
