@@ -34,7 +34,6 @@ export default function SponsorReport() {
   const displayData = reportData || [];
   const dataArray = Array.isArray(displayData) ? displayData : [];
   const totalAmount = dataArray.reduce((sum: number, sponsor: any) => sum + sponsor.totalAmount, 0);
-  const totalDonations = dataArray.reduce((sum: number, sponsor: any) => sum + sponsor.donationsCount, 0);
 
   // Sort by total amount descending
   const sortedData = [...dataArray].sort((a: any, b: any) => b.totalAmount - a.totalAmount);
@@ -88,7 +87,7 @@ export default function SponsorReport() {
               </div>
             ) : sortedData.length > 0 ? (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-2xl font-bold">{sortedData.length}</div>
@@ -97,16 +96,10 @@ export default function SponsorReport() {
                   </Card>
                   <Card>
                     <CardContent className="pt-6">
-                      <div className="text-2xl font-bold">{totalDonations}</div>
-                      <p className="text-xs text-muted-foreground">Всего пожертвований</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-6">
                       <div className="text-2xl font-bold">
-                        {Math.round(totalAmount / sortedData.length).toLocaleString('ru-RU')} ₽
+                        {totalAmount.toLocaleString('ru-RU')} ₽
                       </div>
-                      <p className="text-xs text-muted-foreground">Средняя сумма на спонсора</p>
+                      <p className="text-xs text-muted-foreground">Общая сумма пожертвований</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -116,9 +109,7 @@ export default function SponsorReport() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Спонсор</TableHead>
-                        <TableHead>Телефон</TableHead>
                         <TableHead className="text-right">Сумма пожертвований</TableHead>
-                        <TableHead className="text-right">Количество пожертвований</TableHead>
                         <TableHead className="text-right">% от общей суммы</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -128,21 +119,18 @@ export default function SponsorReport() {
                         return (
                           <TableRow key={index}>
                             <TableCell className="font-medium">{sponsor.sponsorName}</TableCell>
-                            <TableCell>{sponsor.phone}</TableCell>
                             <TableCell className="text-right font-medium">
                               {sponsor.totalAmount.toLocaleString('ru-RU')} ₽
                             </TableCell>
-                            <TableCell className="text-right">{sponsor.donationsCount}</TableCell>
                             <TableCell className="text-right">{percentage}%</TableCell>
                           </TableRow>
                         );
                       })}
                       <TableRow className="border-t-2 font-medium">
-                        <TableCell colSpan={2}>ИТОГО</TableCell>
+                        <TableCell>ИТОГО</TableCell>
                         <TableCell className="text-right font-bold">
                           {totalAmount.toLocaleString('ru-RU')} ₽
                         </TableCell>
-                        <TableCell className="text-right font-bold">{totalDonations}</TableCell>
                         <TableCell className="text-right font-bold">100%</TableCell>
                       </TableRow>
                     </TableBody>

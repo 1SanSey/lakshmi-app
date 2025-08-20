@@ -1108,39 +1108,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { dateFrom, dateTo } = req.params;
       
       const receipts = await storage.getReceipts(userId);
+      const sponsors = await storage.getSponsors(userId);
       
       // Filter receipts by date range
       const startDate = new Date(dateFrom);
       const endDate = new Date(dateTo);
       endDate.setHours(23, 59, 59, 999);
       
-      // Filter receipts that have sponsorName and are within date range
       const periodReceipts = receipts.filter((receipt: any) => {
         const receiptDate = new Date(receipt.date);
-        return receiptDate >= startDate && receiptDate <= endDate && receipt.sponsorName;
+        return receiptDate >= startDate && receiptDate <= endDate;
       });
       
-      // Group by sponsor name
+      // Get receipt items for these receipts
       const sponsorMap = new Map();
       
-      periodReceipts.forEach((receipt: any) => {
-        const sponsorName = receipt.sponsorName;
-        
-        if (!sponsorMap.has(sponsorName)) {
-          sponsorMap.set(sponsorName, {
-            sponsorName: sponsorName,
-            phone: "Не указан", // Since we don't have sponsor phone in receipts
-            totalAmount: 0,
-            donationsCount: 0
-          });
-        }
-        
-        const sponsorData = sponsorMap.get(sponsorName);
-        sponsorData.totalAmount += parseFloat(receipt.amount);
-        sponsorData.donationsCount += 1;
+      // Initialize sponsors map
+      sponsors.forEach((sponsor: any) => {
+        sponsorMap.set(sponsor.id, {
+          sponsorName: sponsor.name,
+          totalAmount: 0
+        });
       });
       
-      const reportData = Array.from(sponsorMap.values());
+      // Process receipt items to get sponsor totals
+      for (const receipt of periodReceipts) {
+        const receiptItems = await storage.getReceiptItems(receipt.id);
+        
+        receiptItems.forEach((item: any) => {
+          if (sponsorMap.has(item.sponsorId)) {
+            const sponsorData = sponsorMap.get(item.sponsorId);
+            sponsorData.totalAmount += parseFloat(item.amount);
+          }
+        });
+      }
+      
+      // Filter out sponsors with no donations and convert to array
+      const reportData = Array.from(sponsorMap.values())
+        .filter((sponsor: any) => sponsor.totalAmount > 0);
+      
       res.json(reportData);
     } catch (error) {
       console.error("Error generating sponsor report:", error);
