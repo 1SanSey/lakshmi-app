@@ -1048,6 +1048,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Expense Report API
+  app.get("/api/reports/expenses/:dateFrom/:dateTo", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { dateFrom, dateTo } = req.params;
+      
+      const costs = await storage.getCosts(userId);
+      const categories = await storage.getExpenseCategories(userId);
+      const nomenclature = await storage.getExpenseNomenclature(userId);
+      
+      // Filter costs by date range
+      const startDate = new Date(dateFrom);
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const periodCosts = costs.filter((cost: any) => {
+        const costDate = new Date(cost.date);
+        return costDate >= startDate && costDate <= endDate;
+      });
+      
+      // Group by category
+      const categoryMap = new Map();
+      
+      categories.forEach((category: any) => {
+        categoryMap.set(category.id, {
+          categoryName: category.name,
+          expenses: []
+        });
+      });
+      
+      // Add costs to categories
+      periodCosts.forEach((cost: any) => {
+        const nomenclatureItem = nomenclature.find((n: any) => n.id === cost.expenseNomenclatureId);
+        const nomenclatureName = nomenclatureItem ? nomenclatureItem.name : "Без номенклатуры";
+        
+        if (categoryMap.has(cost.expenseCategoryId)) {
+          categoryMap.get(cost.expenseCategoryId).expenses.push({
+            name: nomenclatureName,
+            amount: parseFloat(cost.totalAmount)
+          });
+        }
+      });
+      
+      // Convert to array and filter out empty categories
+      const reportData = Array.from(categoryMap.values()).filter((category: any) => category.expenses.length > 0);
+      
+      res.json(reportData);
+    } catch (error) {
+      console.error("Error generating expense report:", error);
+      res.status(500).json({ message: "Failed to generate expense report" });
+    }
+  });
+
+  // Sponsor Report API
+  app.get("/api/reports/sponsors/:dateFrom/:dateTo", skipAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { dateFrom, dateTo } = req.params;
+      
+      const receipts = await storage.getReceipts(userId);
+      const sponsors = await storage.getSponsors(userId);
+      
+      // Filter receipts by date range
+      const startDate = new Date(dateFrom);
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const periodReceipts = receipts.filter((receipt: any) => {
+        const receiptDate = new Date(receipt.date);
+        return receiptDate >= startDate && receiptDate <= endDate && receipt.sponsorId;
+      });
+      
+      // Group by sponsor
+      const sponsorMap = new Map();
+      
+      periodReceipts.forEach((receipt: any) => {
+        if (!sponsorMap.has(receipt.sponsorId)) {
+          const sponsor = sponsors.find((s: any) => s.id === receipt.sponsorId);
+          if (sponsor) {
+            sponsorMap.set(receipt.sponsorId, {
+              sponsorName: sponsor.name,
+              phone: sponsor.phone,
+              totalAmount: 0,
+              donationsCount: 0
+            });
+          }
+        }
+        
+        if (sponsorMap.has(receipt.sponsorId)) {
+          const sponsorData = sponsorMap.get(receipt.sponsorId);
+          sponsorData.totalAmount += parseFloat(receipt.amount);
+          sponsorData.donationsCount += 1;
+        }
+      });
+      
+      const reportData = Array.from(sponsorMap.values());
+      res.json(reportData);
+    } catch (error) {
+      console.error("Error generating sponsor report:", error);
+      res.status(500).json({ message: "Failed to generate sponsor report" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

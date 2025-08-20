@@ -31,35 +31,7 @@ export default function SponsorReport() {
     setShowReport(false);
   };
 
-  // Mock data for demonstration
-  const mockData = [
-    {
-      sponsorName: "Иван Петров",
-      phone: "+7 (999) 123-45-67",
-      totalAmount: 45000,
-      donationsCount: 3
-    },
-    {
-      sponsorName: "ООО Рога и копыта",
-      phone: "+7 (999) 987-65-43",
-      totalAmount: 80000,
-      donationsCount: 2
-    },
-    {
-      sponsorName: "Мария Сидорова",
-      phone: "+7 (999) 555-55-55",
-      totalAmount: 25000,
-      donationsCount: 5
-    },
-    {
-      sponsorName: "АО Прогресс",
-      phone: "+7 (999) 111-22-33",
-      totalAmount: 120000,
-      donationsCount: 1
-    }
-  ];
-
-  const displayData = reportData || (showReport ? mockData : []);
+  const displayData = reportData || [];
   const dataArray = Array.isArray(displayData) ? displayData : [];
   const totalAmount = dataArray.reduce((sum: number, sponsor: any) => sum + sponsor.totalAmount, 0);
   const totalDonations = dataArray.reduce((sum: number, sponsor: any) => sum + sponsor.donationsCount, 0);

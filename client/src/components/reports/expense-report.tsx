@@ -31,34 +31,7 @@ export default function ExpenseReport() {
     setShowReport(false);
   };
 
-  // Mock data for demonstration
-  const mockData = [
-    {
-      categoryName: "Канцелярские товары",
-      expenses: [
-        { name: "Бумага А4", amount: 2500 },
-        { name: "Ручки и карандаши", amount: 1200 },
-        { name: "Папки для документов", amount: 800 }
-      ]
-    },
-    {
-      categoryName: "Транспортные расходы",
-      expenses: [
-        { name: "Топливо для автомобиля", amount: 15000 },
-        { name: "Общественный транспорт", amount: 3000 }
-      ]
-    },
-    {
-      categoryName: "Коммунальные услуги",
-      expenses: [
-        { name: "Электричество", amount: 8000 },
-        { name: "Интернет", amount: 2000 },
-        { name: "Отопление", amount: 12000 }
-      ]
-    }
-  ];
-
-  const displayData = reportData || (showReport ? mockData : []);
+  const displayData = reportData || [];
   const dataArray = Array.isArray(displayData) ? displayData : [];
   
   const totalAmount = dataArray.reduce(
