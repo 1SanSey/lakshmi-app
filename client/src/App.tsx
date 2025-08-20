@@ -23,7 +23,25 @@ import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 
 function Router() {
-  // Временно отключаем аутентификацию для тестирования
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Загрузка...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/auth" component={AuthPage} />
+        <Route component={Landing} />
+      </Switch>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />

@@ -57,6 +57,24 @@ export class NewMemStorage implements IStorage {
     return this.users.get(id);
   }
 
+  async upsertUser(user: UpsertUser): Promise<User> {
+    const existingUser = this.users.get(user.id);
+    const now = new Date();
+    
+    const newUser: User = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profileImageUrl: user.profileImageUrl,
+      createdAt: existingUser?.createdAt || now,
+      updatedAt: now,
+    };
+    
+    this.users.set(user.id, newUser);
+    return newUser;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const now = new Date();
     const userId = userData.id || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
