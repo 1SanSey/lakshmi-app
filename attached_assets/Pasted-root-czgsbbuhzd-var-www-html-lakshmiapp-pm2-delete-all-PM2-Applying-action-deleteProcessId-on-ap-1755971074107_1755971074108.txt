@@ -1,0 +1,22 @@
+root@czgsbbuhzd:/var/www/html/lakshmiapp# pm2 delete all
+[PM2] Applying action deleteProcessId on app [all](ids: [ 0, 1 ])
+[PM2] [lakshmiapp](0) ✓
+[PM2] [lakshmiapp](1) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@czgsbbuhzd:/var/www/html/lakshmiapp# pm2 start ecosystem.config.cjs
+[PM2][WARN] Applications lakshmiapp not running, starting...
+[PM2] App [lakshmiapp] launched (1 instances)
+┌────┬───────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name          │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ lakshmiapp    │ default     │ 1.0.0   │ cluster │ 18430    │ 0s     │ 0    │ online    │ 0%       │ 42.1mb   │ root     │ disabled │
+└────┴───────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@czgsbbuhzd:/var/www/html/lakshmiapp# pm2 status
+┌────┬───────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name          │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ lakshmiapp    │ default     │ 1.0.0   │ cluster │ 18430    │ 8s     │ 0    │ online    │ 0%       │ 100.5mb  │ root     │ disabled │
+└────┴───────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@czgsbbuhzd:/var/www/html/lakshmiapp# 
