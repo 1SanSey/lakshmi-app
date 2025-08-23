@@ -19,7 +19,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { newMemStorage as storage } from "./newMemStorage";
-import { isAuthenticated as requireAuth } from "./replitAuth";
+import { requireAuth } from "./simpleAuth";
 
 // Схемы валидации для входящих данных
 import { 

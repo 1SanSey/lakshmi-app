@@ -41,9 +41,13 @@ import { eq, desc, and, ilike, gte, lte, count, sum } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
-  // User operations (required for Replit Auth)
+  // User operations (required for Replit Auth and simple auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  
+  // Simple auth methods
+  getUserById?(id: string): User | undefined;
+  getUserByUsername?(username: string): User | undefined;
   
   // Sponsor operations
   getSponsors(userId: string, search?: string): Promise<Sponsor[]>;

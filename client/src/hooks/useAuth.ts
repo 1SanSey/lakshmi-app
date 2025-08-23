@@ -23,6 +23,11 @@ export function useAuth() {
   const { data: user, isLoading } = useQuery({
     queryKey: ["/api/auth/user"],  // Уникальный ключ для кэширования
     retry: false,                  // Не повторяем при 401/404 ошибках
+    queryFn: () => fetch('/api/auth/user', { credentials: 'include' }).then(res => {
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    }),
   });
 
   return {

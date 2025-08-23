@@ -50,15 +50,22 @@ export const sessions = pgTable(
   ],
 );
 
-// Users table for authentication
+/**
+ * Таблица пользователей для аутентификации
+ * 
+ * Поддерживает как OAuth провайдеров (email), так и локальную аутентификацию (username/password).
+ * Пароли хешируются с использованием bcrypt для безопасности.
+ */
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`), // Уникальный ID пользователя
+  username: varchar("username").unique(),                         // Логин для простой аутентификации
+  password: varchar("password"),                                  // Хешированный пароль
+  email: varchar("email").unique(),                              // Email (для OAuth)
+  firstName: varchar("first_name"),                              // Имя пользователя
+  lastName: varchar("last_name"),                                // Фамилия пользователя
+  profileImageUrl: varchar("profile_image_url"),                 // URL аватара
+  createdAt: timestamp("created_at").defaultNow(),               // Время создания записи
+  updatedAt: timestamp("updated_at").defaultNow(),               // Время последнего обновления
 });
 
 // Sponsors table

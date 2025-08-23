@@ -147,7 +147,9 @@ export class NewMemStorage implements IStorage {
     
     const newUser: User = {
       id: ensureString(user.id),
-      email: ensureString(user.email),
+      username: safeStringParse(user.username),
+      password: safeStringParse(user.password),
+      email: safeStringParse(user.email),
       firstName: safeStringParse(user.firstName),
       lastName: safeStringParse(user.lastName),
       profileImageUrl: safeStringParse(user.profileImageUrl),
@@ -157,6 +159,29 @@ export class NewMemStorage implements IStorage {
     
     this.users.set(ensureString(user.id), newUser);
     return newUser;
+  }
+
+  /**
+   * Получение пользователя по логину (для простой аутентификации)
+   * @param username - Логин пользователя
+   * @returns Объект пользователя или undefined если не найден
+   */
+  getUserByUsername(username: string): User | undefined {
+    for (const user of this.users.values()) {
+      if (user.username === username) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Получение пользователя по ID (синхронная версия для аутентификации)
+   * @param id - Уникальный идентификатор пользователя
+   * @returns Объект пользователя или undefined если не найден
+   */
+  getUserById(id: string): User | undefined {
+    return this.users.get(id);
   }
 
   // Sponsor operations

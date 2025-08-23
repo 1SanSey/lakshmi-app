@@ -1,13 +1,8 @@
 /**
- * Страница аутентификации LakshmiApp
+ * Упрощенная страница аутентификации LakshmiApp
  * 
- * Предоставляет пользователю интерфейс для входа в систему через:
- * - Социальные провайдеры (Google, GitHub) через Replit OIDC
- * - Email/пароль форму (перенаправляет на Replit OIDC)
- * - Вкладки для входа и регистрации (обе ведут к Replit)
- * 
- * Компонент отображается когда пользователь не аутентифицирован
- * и автоматически скрывается после успешного входа.
+ * Содержит только формы логин/пароль без OAuth провайдеров.
+ * Поддерживает вход и регистрацию новых пользователей.
  */
 
 import { useState } from "react";
@@ -16,48 +11,64 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChartLine, Mail, Eye, EyeOff } from "lucide-react";
-import { FaGoogle, FaGithub } from "react-icons/fa";
+import { Eye, EyeOff } from "lucide-react";
 
 /**
- * Компонент страницы аутентификации
+ * Компонент простой страницы аутентификации
  * 
- * Отображает форму входа с логотипом Лакшми и различными вариантами аутентификации.
- * Все методы входа в итоге перенаправляют на Replit OIDC систему.
+ * Отображает форму входа/регистрации с логотипом Лакшми.
+ * Отправляет данные на новые API endpoints простой аутентификации.
  */
 export default function AuthPage() {
   /** Состояние видимости пароля в форме */
   const [showPassword, setShowPassword] = useState(false);
   
-  /** Состояние загрузки для блокировки кнопок во время перенаправления */
+  /** Состояние загрузки для блокировки кнопок во время запроса */
   const [isLoading, setIsLoading] = useState(false);
 
   /**
-   * Обработчик входа через социальные сети
+   * Обработчик отправки формы входа/регистрации
    * 
-   * Перенаправляет пользователя на Replit OIDC с указанием провайдера.
-   * Устанавливает состояние загрузки для предотвращения множественных кликов.
+   * Отправляет данные формы на соответствующий API endpoint
+   * в зависимости от выбранной вкладки (вход или регистрация).
    * 
-   * @param provider - Название провайдера (google, github)
+   * @param formData - Данные формы с полями логин/пароль
+   * @param isSignUp - Флаг определяющий регистрацию (true) или вход (false)
    */
-  const handleSocialLogin = (provider: string) => {
+  const handleFormSubmit = async (formData: FormData, isSignUp: boolean) => {
     setIsLoading(true);
-    // Для Replit OIDC все провайдеры идут через /api/login
-    window.location.href = `/api/login?provider=${provider}`;
-  };
+    
+    try {
+      const username = formData.get('username') as string;
+      const password = formData.get('password') as string;
+      const firstName = formData.get('firstName') as string;
+      const lastName = formData.get('lastName') as string;
 
-  /**
-   * Обработчик входа через email/пароль
-   * 
-   * В текущей реализации перенаправляет на стандартную страницу Replit OIDC,
-   * поскольку приложение использует исключительно Replit аутентификацию.
-   * 
-   * @param isSignUp - Флаг регистрации (в текущей версии не используется)
-   */
-  const handleEmailAuth = (isSignUp: boolean) => {
-    setIsLoading(true);
-    // Направляем на основную страницу входа Replit
-    window.location.href = "/api/login";
+      const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
+      const body = isSignUp 
+        ? { username, password, firstName, lastName }
+        : { username, password };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        // Перезагружаем страницу для обновления состояния аутентификации
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Ошибка при входе в систему');
+      }
+    } catch (error) {
+      alert('Ошибка подключения к серверу');
+      console.error('Ошибка аутентификации:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -86,199 +97,138 @@ export default function AuthPage() {
               <TabsTrigger value="signup">Регистрация</TabsTrigger>
             </TabsList>
 
+            {/* Форма входа */}
             <TabsContent value="signin" className="space-y-4">
-              <div className="space-y-4">
-                {/* Social Login Buttons */}
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target as HTMLFormElement);
+                handleFormSubmit(formData, false);
+              }} className="space-y-4">
                 <div className="space-y-3">
-                  <Button
-                    onClick={() => handleSocialLogin("google")}
-                    variant="outline"
-                    className="w-full py-3 flex items-center justify-center gap-2"
-                    disabled={isLoading}
-                  >
-                    <FaGoogle className="w-4 h-4 text-red-500" />
-                    Войти через Google
-                  </Button>
-
-                  <Button
-                    onClick={() => handleSocialLogin("github")}
-                    variant="outline"
-                    className="w-full py-3 flex items-center justify-center gap-2"
-                    disabled={isLoading}
-                  >
-                    <FaGithub className="w-4 h-4" />
-                    Войти через GitHub
-                  </Button>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      или
-                    </span>
-                  </div>
-                </div>
-
-                {/* Email Form */}
-                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="signin-username">Логин</Label>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="your@email.com"
+                      id="signin-username"
+                      name="username"
+                      type="text"
+                      placeholder="Введите логин"
                       required
+                      disabled={isLoading}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password">Пароль</Label>
+                    <Label htmlFor="signin-password">Пароль</Label>
                     <div className="relative">
                       <Input
-                        id="password"
+                        id="signin-password"
+                        name="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Введите пароль"
+                        className="pr-10"
                         required
+                        disabled={isLoading}
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        disabled={isLoading}
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 
                   <Button
-                    onClick={() => handleEmailAuth(false)}
-                    className="w-full bg-primary hover:bg-blue-700 text-white py-3"
+                    type="submit"
+                    className="w-full py-3 bg-primary hover:bg-blue-700 text-white"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Загрузка..." : "Войти"}
+                    {isLoading ? "Вход..." : "Войти"}
                   </Button>
                 </div>
-              </div>
+              </form>
             </TabsContent>
 
+            {/* Форма регистрации */}
             <TabsContent value="signup" className="space-y-4">
-              <div className="space-y-4">
-                {/* Social Registration */}
-                <div className="space-y-3">
-                  <Button
-                    onClick={() => handleSocialLogin("google")}
-                    variant="outline"
-                    className="w-full py-3 flex items-center justify-center gap-2"
-                    disabled={isLoading}
-                  >
-                    <FaGoogle className="w-4 h-4 text-red-500" />
-                    Зарегистрироваться через Google
-                  </Button>
-
-                  <Button
-                    onClick={() => handleSocialLogin("github")}
-                    variant="outline"
-                    className="w-full py-3 flex items-center justify-center gap-2"
-                    disabled={isLoading}
-                  >
-                    <FaGithub className="w-4 h-4" />
-                    Зарегистрироваться через GitHub
-                  </Button>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      или
-                    </span>
-                  </div>
-                </div>
-
-                {/* Registration Form */}
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target as HTMLFormElement);
+                handleFormSubmit(formData, true);
+              }} className="space-y-4">
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">Имя</Label>
+                      <Label htmlFor="signup-firstName">Имя</Label>
                       <Input
-                        id="firstName"
+                        id="signup-firstName"
+                        name="firstName"
+                        type="text"
                         placeholder="Иван"
-                        required
+                        disabled={isLoading}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lastName">Фамилия</Label>
+                      <Label htmlFor="signup-lastName">Фамилия</Label>
                       <Input
-                        id="lastName"
+                        id="signup-lastName"
+                        name="lastName"
+                        type="text"
                         placeholder="Иванов"
-                        required
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signupEmail">Email</Label>
+                    <Label htmlFor="signup-username">Логин</Label>
                     <Input
-                      id="signupEmail"
-                      type="email"
-                      placeholder="your@email.com"
+                      id="signup-username"
+                      name="username"
+                      type="text"
+                      placeholder="Введите логин"
                       required
+                      disabled={isLoading}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signupPassword">Пароль</Label>
+                    <Label htmlFor="signup-password">Пароль</Label>
                     <div className="relative">
                       <Input
-                        id="signupPassword"
+                        id="signup-password"
+                        name="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Создайте пароль"
+                        placeholder="Минимум 6 символов"
+                        className="pr-10"
                         required
+                        minLength={6}
+                        disabled={isLoading}
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        disabled={isLoading}
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 
                   <Button
-                    onClick={() => handleEmailAuth(true)}
-                    className="w-full bg-primary hover:bg-blue-700 text-white py-3"
+                    type="submit"
+                    className="w-full py-3 bg-primary hover:bg-blue-700 text-white"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Загрузка..." : "Создать аккаунт"}
+                    {isLoading ? "Регистрация..." : "Зарегистрироваться"}
                   </Button>
                 </div>
-              </div>
+              </form>
             </TabsContent>
           </Tabs>
-
-          <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500">
-              Безопасная аутентификация от Replit
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
