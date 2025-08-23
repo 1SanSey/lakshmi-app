@@ -1,0 +1,40 @@
+root@czgsbbuhzd:/var/www/html/lakshmiapp# cd /var/www/html/lakshmiapp && pm2 logs lakshmiapp --lines 20
+[TAILING] Tailing last 20 lines for [lakshmiapp] process (change the value with --lines option)
+/var/log/pm2/lakshmiapp-out-0.log last 20 lines:
+/var/log/pm2/lakshmiapp-error-0.log last 20 lines:
+0|lakshmia |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|lakshmia |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+0|lakshmia | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|lakshmia | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|lakshmia |     at file:///var/www/html/lakshmiapp/dist/index.js:1403:9
+0|lakshmia |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|lakshmia |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|lakshmia |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+0|lakshmia | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|lakshmia | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|lakshmia |     at file:///var/www/html/lakshmiapp/dist/index.js:1403:9
+0|lakshmia |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|lakshmia |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|lakshmia |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+0|lakshmia | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|lakshmia | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|lakshmia |     at file:///var/www/html/lakshmiapp/dist/index.js:1403:9
+0|lakshmia |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|lakshmia |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|lakshmia |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+
+/root/.pm2/logs/lakshmiapp-error.log last 20 lines:
+/root/.pm2/logs/lakshmiapp-out.log last 20 lines:
+1|lakshmia | [dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+1|lakshmia | 5:34:17 PM [express] serving on port 5000
+
+^C
+root@czgsbbuhzd:/var/www/html/lakshmiapp# cd /var/www/html/lakshmiapp && ls -la dist/
+total 116
+drwxr-xr-x 3 nodejs nodejs   4096 Aug 23 15:09 .
+drwxr-xr-x 8 nodejs nodejs   4096 Aug 23 17:01 ..
+-rwxr-xr-x 1 nodejs nodejs 105422 Aug 23 15:58 index.js
+drwxr-xr-x 3 nodejs nodejs   4096 Aug 23 17:01 public
+root@czgsbbuhzd:/var/www/html/lakshmiapp# cd /var/www/html/lakshmiapp && ls -la dist/client/
+ls: cannot access 'dist/client/': No such file or directory
+root@czgsbbuhzd:/var/www/html/lakshmiapp# 
