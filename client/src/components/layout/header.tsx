@@ -36,10 +36,14 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <ChartLine className="text-primary-foreground h-5 w-5" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+              <img 
+                src="/attached_assets/pngtree-lakshmi-puja-festival-special-maa-laxmi-devi-transparent-hindu-png-image_14139585_1755948009739.png" 
+                alt="Lakshmi" 
+                className="w-8 h-8 object-contain"
+              />
             </div>
-            <h1 className="text-xl font-semibold text-foreground">FinManager</h1>
+            <h1 className="text-xl font-semibold text-foreground">LakshmiApp</h1>
           </div>
 
           <div className="flex items-center space-x-4">

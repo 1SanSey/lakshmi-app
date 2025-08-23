@@ -1,6 +1,6 @@
 # Overview
 
-FinManager is a full-stack financial management application built for personal accounting and sponsor relationship management. The application allows users to track income through receipts from sponsors, monitor expenses through cost management, manage funds with percentage-based automatic distribution, and view comprehensive dashboard analytics. It's designed as a Progressive Web App (PWA) with offline capabilities and mobile-responsive design.
+LakshmiApp is a full-stack financial management application built for personal accounting and sponsor relationship management. The application allows users to track income through receipts from sponsors, monitor expenses through cost management, manage funds with percentage-based automatic distribution, and view comprehensive dashboard analytics. It's designed as a Progressive Web App (PWA) with offline capabilities and mobile-responsive design.
 
 # User Preferences
 
@@ -62,6 +62,16 @@ Preferred communication style: Simple, everyday language.
 - **Development Tools**: Hot module replacement, runtime error overlay, and development banner integration
 
 ## Recent Changes (August 2025)
+
+- **Брендинг с Лакшми (23 августа 2025)**: Полное обновление дизайна и символики
+  - Заменил логотип на изображение богини Лакшми (Hindu goddess of wealth and prosperity)
+  - Переименовал приложение с FinManager на LakshmiApp во всех компонентах
+  - Обновил favicon и иконки PWA с новым изображением
+  - Изменил заголовки и названия во всех страницах и компонентах
+  - Обновил HTML meta-теги и PWA manifest для нового брендинга
+  - Сохранил русскоязычный интерфейс с английским названием проекта
+
+## Previous Changes
 
 - **Комплексный рефакторинг кода (23 августа 2025)**: Проведена полная оптимизация архитектуры
   - Создал 4 новых утилитарных модуля для централизации общих функций
@@ -135,7 +145,7 @@ Preferred communication style: Simple, everyday language.
   - Updated navigation labels from "Панель управления" to "Обзор"
   - Translated error messages and success notifications throughout the app
 
-- **Project Rebranding**: Renamed project from "Финансовый менеджер" to "FinManager"
+- **Project Rebranding**: Renamed project from "Финансовый менеджер" to "LakshmiApp"
   - Updated all page titles, headers, and branding throughout the application
   - Changed HTML document title and PWA manifest to reflect new name
   - Updated landing page, authentication page, and main header components

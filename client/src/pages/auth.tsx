@@ -27,11 +27,15 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary to-blue-600 p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <ChartLine className="text-white h-8 w-8" />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <img 
+              src="/attached_assets/pngtree-lakshmi-puja-festival-special-maa-laxmi-devi-transparent-hindu-png-image_14139585_1755948009739.png" 
+              alt="Lakshmi" 
+              className="w-16 h-16 object-contain"
+            />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            FinManager
+            LakshmiApp
           </CardTitle>
           <p className="text-gray-600 mt-2">
             Войдите или зарегистрируйтесь для управления финансами

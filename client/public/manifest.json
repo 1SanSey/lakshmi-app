@@ -1,6 +1,6 @@
 {
-  "name": "FinManager",
-  "short_name": "FinManager",
+  "name": "LakshmiApp",
+  "short_name": "LakshmiApp",
   "description": "Progressive Web App for financial accounting with sponsors, receipts, and costs management",
   "start_url": "/",
   "display": "standalone",
@@ -9,14 +9,14 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMzIiIGZpbGw9IiMxOTc2RDIiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CjxwYXRoIGQ9Im0zIDMgMyAzIDMtMyAzIDMgMy0zIi8+CjxwYXRoIGQ9Im0yMSAyMS0zLTMtMy0zLTMgMy0zLTMiLz4KPHN2Zz4KPC9zdmc+",
+      "src": "/attached_assets/pngtree-lakshmi-puja-festival-special-maa-laxmi-devi-transparent-hindu-png-image_14139585_1755948009739.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png"
     },
     {
-      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iODYiIGZpbGw9IiMxOTc2RDIiLz4KPHN2ZyB4PSIxMjgiIHk9IjEyOCIgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgo8cGF0aCBkPSJtMyAzIDMgMyAzLTMgMyAzIDMtMyIvPgo8cGF0aCBkPSJtMjEgMjEtMy0zLTMtMy0zIDMtMy0zIi8+Cjwvc3ZnPgo8L3N2Zz4=",
+      "src": "/attached_assets/pngtree-lakshmi-puja-festival-special-maa-laxmi-devi-transparent-hindu-png-image_14139585_1755948009739.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png"
     }
   ],
   "categories": ["finance", "business", "productivity"],
