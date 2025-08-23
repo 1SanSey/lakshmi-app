@@ -33,6 +33,22 @@ import {
   type ExpenseCategory,
   type InsertExpenseCategory
 } from "@shared/schema";
+import {
+  generateId,
+  generateSponsorId,
+  generateReceiptId,
+  generateCostId,
+  generateFundId,
+  generateFundTransferId,
+  generateIncomeSourceId,
+  generateDistributionId,
+  generateNomenclatureId,
+  generateCategoryId,
+  generateItemId,
+  generateSourceId,
+  generateDistId
+} from "./utils/idGenerator";
+import { ensureString, ensureNonNull, safeDateParse, safeStringParse } from "./utils/typeHelpers";
 
 export class NewMemStorage implements IStorage {
   private users: Map<string, User> = new Map();
@@ -58,20 +74,20 @@ export class NewMemStorage implements IStorage {
   }
 
   async upsertUser(user: UpsertUser): Promise<User> {
-    const existingUser = this.users.get(user.id);
+    const existingUser = this.users.get(ensureString(user.id));
     const now = new Date();
     
     const newUser: User = {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      profileImageUrl: user.profileImageUrl,
+      id: ensureString(user.id),
+      email: ensureString(user.email),
+      firstName: safeStringParse(user.firstName),
+      lastName: safeStringParse(user.lastName),
+      profileImageUrl: safeStringParse(user.profileImageUrl),
       createdAt: existingUser?.createdAt || now,
       updatedAt: now,
     };
     
-    this.users.set(user.id, newUser);
+    this.users.set(ensureString(user.id), newUser);
     return newUser;
   }
 
@@ -90,7 +106,7 @@ export class NewMemStorage implements IStorage {
   }
 
   async createSponsor(sponsor: InsertSponsor, userId: string): Promise<Sponsor> {
-    const id = `sponsor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateSponsorId();
     const now = new Date();
     const newSponsor: Sponsor = {
       id,
@@ -194,7 +210,7 @@ export class NewMemStorage implements IStorage {
   }
 
   async createReceipt(receipt: InsertReceipt, userId: string): Promise<Receipt> {
-    const id = `receipt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateReceiptId();
     const now = new Date();
     const newReceipt: Receipt = {
       id,
@@ -349,7 +365,7 @@ export class NewMemStorage implements IStorage {
       throw new Error(`Недостаточно средств в фонде "${fund.name}" на дату ${expenseDate.toLocaleDateString('ru-RU')}. Доступно: ${balanceOnDate.toLocaleString('ru-RU')}₽, требуется: ${costAmount.toLocaleString('ru-RU')}₽`);
     }
 
-    const id = `cost_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateCostId();
     const now = new Date();
     const newCost: Cost = {
       id,
@@ -426,7 +442,7 @@ export class NewMemStorage implements IStorage {
   }
 
   async createCostItem(costItem: InsertCostItem, costId: string): Promise<CostItem> {
-    const id = `cost_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateItemId();
     const now = new Date();
     const newCostItem: CostItem = {
       id,
@@ -466,7 +482,7 @@ export class NewMemStorage implements IStorage {
   }
 
   async createFund(fund: InsertFund, userId: string): Promise<Fund> {
-    const id = `fund_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateFundId();
     const now = new Date();
     const newFund: Fund = {
       id,
@@ -512,7 +528,7 @@ export class NewMemStorage implements IStorage {
   }
 
   async createIncomeSource(incomeSource: InsertIncomeSource, userId: string): Promise<IncomeSource> {
-    const id = `source_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateItemId();
     const now = new Date();
     const newIncomeSource: IncomeSource = {
       id,
@@ -559,7 +575,7 @@ export class NewMemStorage implements IStorage {
 
   // Income source fund distribution operations
   async createIncomeSourceFundDistribution(distribution: InsertIncomeSourceFundDistribution): Promise<IncomeSourceFundDistribution> {
-    const id = `dist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateItemId();
     const now = new Date();
     const newDistribution: IncomeSourceFundDistribution = {
       id,
@@ -593,7 +609,7 @@ export class NewMemStorage implements IStorage {
 
   // Receipt item operations
   async createReceiptItem(receiptItem: InsertReceiptItem, userId?: string): Promise<ReceiptItem> {
-    const id = `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateItemId();
     const now = new Date();
     const newReceiptItem: ReceiptItem = {
       id,
@@ -643,7 +659,7 @@ export class NewMemStorage implements IStorage {
     for (const sourceDistribution of incomeSourceDistributions) {
       const distributionAmount = (amount * sourceDistribution.percentage) / 100;
       
-      const id = `dist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const id = generateItemId();
       const now = new Date();
       const distribution: FundDistribution = {
         id,
@@ -660,7 +676,7 @@ export class NewMemStorage implements IStorage {
 
   // Fund distribution operations
   async createFundDistribution(distribution: InsertFundDistribution): Promise<FundDistribution> {
-    const id = `fundDist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateItemId();
     const now = new Date();
     const newDistribution: FundDistribution = {
       id,
@@ -767,7 +783,7 @@ export class NewMemStorage implements IStorage {
 
   // Fund transfer operations
   async createFundTransfer(transfer: InsertFundTransfer): Promise<FundTransfer> {
-    const id = `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateFundTransferId();
     const now = new Date();
     const newTransfer: FundTransfer = {
       id,
@@ -886,7 +902,7 @@ export class NewMemStorage implements IStorage {
   }
 
   async createManualFundDistribution(distribution: InsertManualFundDistribution, userId: string): Promise<ManualFundDistribution> {
-    const id = `manual_dist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateItemId();
     const now = new Date();
     const newDistribution: ManualFundDistribution = {
       id,
@@ -969,7 +985,7 @@ export class NewMemStorage implements IStorage {
     }
 
     // Create distribution history entry
-    const historyId = `distribution_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const historyId = generateDistributionId();
     const distributionHistory: DistributionHistory = {
       id: historyId,
       userId,
@@ -1025,7 +1041,7 @@ export class NewMemStorage implements IStorage {
       // Calculate percentage of total
       const percentage = (amount / unallocatedAmount) * 100;
       
-      const historyItemId = `distribution_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const historyItemId = generateItemId();
       const historyItem: DistributionHistoryItem = {
         id: historyItemId,
         distributionId: historyId,
@@ -1134,7 +1150,7 @@ export class NewMemStorage implements IStorage {
   }
 
   async createExpenseNomenclature(nomenclature: InsertExpenseNomenclature, userId: string): Promise<ExpenseNomenclature> {
-    const id = `expnom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateItemId();
     const now = new Date();
     const newNomenclature: ExpenseNomenclature = {
       id,
@@ -1181,7 +1197,7 @@ export class NewMemStorage implements IStorage {
   }
 
   async createExpenseCategory(category: InsertExpenseCategory, userId: string): Promise<ExpenseCategory> {
-    const id = `expcat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateItemId();
     const now = new Date();
     const newCategory: ExpenseCategory = {
       id,

@@ -17,100 +17,93 @@ import {
   insertExpenseCategorySchema
 } from "@shared/schema";
 import { z } from "zod";
+import { handleValidationError, handleError, validateUserId, parseNumericParam, parseDateParam } from "./utils/validation";
+import { notFound, unauthorized, badRequest, serverError, created, ok, noContent } from "./utils/responseHelpers";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', requireAuth, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const userId = validateUserId(req.user?.claims?.sub);
+      const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return notFound(res, "User not found");
       }
-      res.json(user);
+      ok(res, user);
     } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      handleError(error, res, "Failed to fetch user");
     }
   });
 
   // Sponsor routes
   app.get("/api/sponsors", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const search = req.query.search as string;
       const sponsors = await storage.getSponsors(userId, search);
-      res.json(sponsors);
+      ok(res, sponsors);
     } catch (error) {
-      console.error("Error fetching sponsors:", error);
-      res.status(500).json({ message: "Failed to fetch sponsors" });
+      handleError(error, res, "Failed to fetch sponsors");
     }
   });
 
   app.get("/api/sponsors/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const sponsor = await storage.getSponsor(req.params.id, userId);
       if (!sponsor) {
-        return res.status(404).json({ message: "Sponsor not found" });
+        return notFound(res, "Sponsor not found");
       }
-      res.json(sponsor);
+      ok(res, sponsor);
     } catch (error) {
-      console.error("Error fetching sponsor:", error);
-      res.status(500).json({ message: "Failed to fetch sponsor" });
+      handleError(error, res, "Failed to fetch sponsor");
     }
   });
 
   app.post("/api/sponsors", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertSponsorSchema.parse(req.body);
       const sponsor = await storage.createSponsor(validatedData, userId);
-      res.status(201).json(sponsor);
+      created(res, sponsor);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      console.error("Error creating sponsor:", error);
-      res.status(500).json({ message: "Failed to create sponsor" });
+      if (handleValidationError(error, res)) return;
+      handleError(error, res, "Failed to create sponsor");
     }
   });
 
   app.put("/api/sponsors/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertSponsorSchema.partial().parse(req.body);
       const sponsor = await storage.updateSponsor(req.params.id, validatedData, userId);
       if (!sponsor) {
-        return res.status(404).json({ message: "Sponsor not found" });
+        return notFound(res);
       }
-      res.json(sponsor);
+      ok(res, sponsor);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      console.error("Error updating sponsor:", error);
-      res.status(500).json({ message: "Failed to update sponsor" });
+      if (handleValidationError(error, res)) return;
+      handleError(error, res, "Failed to update sponsor");
     }
   });
 
   app.delete("/api/sponsors/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteSponsor(req.params.id, userId);
       if (!deleted) {
-        return res.status(404).json({ message: "Sponsor not found" });
+        return notFound(res);
       }
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
-      console.error("Error deleting sponsor:", error);
-      res.status(500).json({ message: "Failed to delete sponsor" });
+      handleError(error, res, "Failed to delete sponsor");
     }
   });
 
   // Receipt routes
   app.get("/api/receipts", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const search = req.query.search as string;
       const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
       const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;
@@ -118,30 +111,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 20;
       
       const result = await storage.getReceiptsPaginated(userId, search, fromDate, toDate, page, limit);
-      res.json(result);
+      ok(res, result);
     } catch (error) {
       console.error("Error fetching receipts:", error);
-      res.status(500).json({ message: "Failed to fetch receipts" });
+      serverError(res);
     }
   });
 
   app.get("/api/receipts/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const receipt = await storage.getReceipt(req.params.id, userId);
       if (!receipt) {
-        return res.status(404).json({ message: "Receipt not found" });
+        return notFound(res);
       }
-      res.json(receipt);
+      ok(res, receipt);
     } catch (error) {
       console.error("Error fetching receipt:", error);
-      res.status(500).json({ message: "Failed to fetch receipt" });
+      serverError(res);
     }
   });
 
   app.post("/api/receipts", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const receiptData = {
         ...req.body,
         amount: parseFloat(req.body.amount) || 0,
@@ -152,16 +145,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Don't automatically distribute funds - let user manually distribute them
       
-      res.status(201).json(receipt);
+      created(res, receipt);
     } catch (error) {
       console.error("Error creating receipt:", error);
-      res.status(500).json({ message: "Failed to create receipt" });
+      serverError(res);
     }
   });
 
   app.put("/api/receipts/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       
       // Преобразуем данные для обновления поступления
       const receiptData = {
@@ -172,33 +165,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const receipt = await storage.updateReceipt(req.params.id, receiptData, userId);
       if (!receipt) {
-        return res.status(404).json({ message: "Receipt not found" });
+        return notFound(res);
       }
       
       // Note: Fund redistribution will be handled manually by user
       
-      res.json(receipt);
+      ok(res, receipt);
     } catch (error) {
       if (error instanceof z.ZodError) {
         console.error("Validation error:", error.errors);
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error updating receipt:", error);
-      res.status(500).json({ message: "Failed to update receipt" });
+      serverError(res);
     }
   });
 
   app.delete("/api/receipts/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteReceipt(req.params.id, userId);
       if (!deleted) {
-        return res.status(404).json({ message: "Receipt not found" });
+        return notFound(res);
       }
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
       console.error("Error deleting receipt:", error);
-      res.status(500).json({ message: "Failed to delete receipt" });
+      serverError(res);
     }
   });
 
@@ -213,7 +206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: parseFloat(amount).toString(),
       });
       
-      res.status(201).json(receiptItem);
+      created(res, receiptItem);
     } catch (error) {
       console.error("Error creating receipt item:", error);
       res.status(500).json({ error: "Failed to create receipt item" });
@@ -224,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { receiptId } = req.params;
       await storage.deleteReceiptItems(receiptId);
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
       console.error("Error deleting receipt items:", error);
       res.status(500).json({ error: "Failed to delete receipt items" });
@@ -234,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cost routes - новая структура
   app.get("/api/costs", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const search = req.query.search as string;
       const expenseCategoryId = req.query.expenseCategoryId as string;
       const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
@@ -244,30 +237,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Always use pagination for consistency with other endpoints
       const result = await storage.getCostsPaginated(userId, search, expenseCategoryId, fromDate, toDate, page, limit);
-      res.json(result);
+      ok(res, result);
     } catch (error) {
       console.error("Error fetching costs:", error);
-      res.status(500).json({ message: "Failed to fetch costs" });
+      serverError(res);
     }
   });
 
   app.get("/api/costs/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const cost = await storage.getCost(req.params.id, userId);
       if (!cost) {
-        return res.status(404).json({ message: "Cost not found" });
+        return notFound(res);
       }
-      res.json(cost);
+      ok(res, cost);
     } catch (error) {
       console.error("Error fetching cost:", error);
-      res.status(500).json({ message: "Failed to fetch cost" });
+      serverError(res);
     }
   });
 
   app.post("/api/costs", async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       
       // Преобразуем данные вручную
       const requestData = {
@@ -280,46 +273,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertCostSchema.parse(requestData);
       console.log("Validated data:", validatedData);
       const cost = await storage.createCost(validatedData, userId);
-      res.status(201).json(cost);
+      created(res, cost);
     } catch (error) {
       if (error instanceof z.ZodError) {
         console.error("Validation error:", error.errors);
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error creating cost:", error);
-      res.status(500).json({ message: "Failed to create cost", error: error.message });
+      res.status(500).json({ message: "Failed to create cost", error: (error as Error).message });
     }
   });
 
   app.put("/api/costs/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertCostSchema.partial().parse(req.body);
       const cost = await storage.updateCost(req.params.id, validatedData, userId);
       if (!cost) {
-        return res.status(404).json({ message: "Cost not found" });
+        return notFound(res);
       }
-      res.json(cost);
+      ok(res, cost);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      console.error("Error updating cost:", error);
-      res.status(500).json({ message: "Failed to update cost" });
+      if (handleValidationError(error, res)) return;
+      handleError(error, res, "Failed to update cost");
     }
   });
 
   app.delete("/api/costs/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteCost(req.params.id, userId);
       if (!deleted) {
-        return res.status(404).json({ message: "Cost not found" });
+        return notFound(res);
       }
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
-      console.error("Error deleting cost:", error);
-      res.status(500).json({ message: "Failed to delete cost" });
+      handleError(error, res, "Failed to delete cost");
     }
   });
 
@@ -328,10 +317,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { costId } = req.params;
       const items = await storage.getCostItems(costId);
-      res.json(items);
+      ok(res, items);
     } catch (error) {
       console.error("Error fetching cost items:", error);
-      res.status(500).json({ message: "Failed to fetch cost items" });
+      serverError(res);
     }
   });
 
@@ -340,13 +329,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { costId } = req.params;
       const validatedData = insertCostItemSchema.parse(req.body);
       const costItem = await storage.createCostItem(validatedData, costId);
-      res.status(201).json(costItem);
+      created(res, costItem);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error creating cost item:", error);
-      res.status(500).json({ message: "Failed to create cost item" });
+      serverError(res);
     }
   });
 
@@ -355,15 +344,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertCostItemSchema.partial().parse(req.body);
       const costItem = await storage.updateCostItem(req.params.id, validatedData);
       if (!costItem) {
-        return res.status(404).json({ message: "Cost item not found" });
+        return notFound(res);
       }
-      res.json(costItem);
+      ok(res, costItem);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error updating cost item:", error);
-      res.status(500).json({ message: "Failed to update cost item" });
+      serverError(res);
     }
   });
 
@@ -371,96 +360,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deleted = await storage.deleteCostItem(req.params.id);
       if (!deleted) {
-        return res.status(404).json({ message: "Cost item not found" });
+        return notFound(res);
       }
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
       console.error("Error deleting cost item:", error);
-      res.status(500).json({ message: "Failed to delete cost item" });
+      serverError(res);
     }
   });
 
   // Fund routes
   app.get("/api/funds", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const funds = await storage.getFunds(userId);
-      res.json(funds);
+      ok(res, funds);
     } catch (error) {
       console.error("Error fetching funds:", error);
-      res.status(500).json({ message: "Failed to fetch funds" });
+      serverError(res);
     }
   });
 
   app.get("/api/funds/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const fund = await storage.getFund(req.params.id, userId);
       if (!fund) {
-        return res.status(404).json({ message: "Fund not found" });
+        return notFound(res);
       }
-      res.json(fund);
+      ok(res, fund);
     } catch (error) {
       console.error("Error fetching fund:", error);
-      res.status(500).json({ message: "Failed to fetch fund" });
+      serverError(res);
     }
   });
 
   app.post("/api/funds", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertFundSchema.parse(req.body);
       const fund = await storage.createFund(validatedData, userId);
-      res.status(201).json(fund);
+      created(res, fund);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error creating fund:", error);
-      res.status(500).json({ message: "Failed to create fund" });
+      serverError(res);
     }
   });
 
   app.put("/api/funds/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertFundSchema.partial().parse(req.body);
       const fund = await storage.updateFund(req.params.id, validatedData, userId);
       if (!fund) {
-        return res.status(404).json({ message: "Fund not found" });
+        return notFound(res);
       }
-      res.json(fund);
+      ok(res, fund);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error updating fund:", error);
-      res.status(500).json({ message: "Failed to update fund" });
+      serverError(res);
     }
   });
 
   app.delete("/api/funds/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteFund(req.params.id, userId);
       if (!deleted) {
-        return res.status(404).json({ message: "Fund not found" });
+        return notFound(res);
       }
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
       console.error("Error deleting fund:", error);
-      res.status(500).json({ message: "Failed to delete fund" });
+      serverError(res);
     }
   });
 
   app.get("/api/funds/balances", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const fundsWithBalances = await storage.getFundsWithBalances(userId);
-      res.json(fundsWithBalances);
+      ok(res, fundsWithBalances);
     } catch (error) {
       console.error("Error fetching funds with balances:", error);
-      res.status(500).json({ message: "Failed to fetch funds with balances" });
+      serverError(res);
     }
   });
 
@@ -468,107 +457,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/receipts/:receiptId/distributions", requireAuth, async (req: any, res) => {
     try {
       const distributions = await storage.getFundDistributionsByReceipt(req.params.receiptId);
-      res.json(distributions);
+      ok(res, distributions);
     } catch (error) {
       console.error("Error fetching fund distributions:", error);
-      res.status(500).json({ message: "Failed to fetch fund distributions" });
+      serverError(res);
     }
   });
 
   // Dashboard statistics routes
   app.get("/api/dashboard/stats", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const stats = await storage.getDashboardStats(userId);
-      res.json(stats);
+      ok(res, stats);
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
-      res.status(500).json({ message: "Failed to fetch dashboard stats" });
+      serverError(res);
     }
   });
 
   app.get("/api/dashboard/activity", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
       const activity = await storage.getRecentActivity(userId, limit);
-      res.json(activity);
+      ok(res, activity);
     } catch (error) {
       console.error("Error fetching recent activity:", error);
-      res.status(500).json({ message: "Failed to fetch recent activity" });
+      serverError(res);
     }
   });
 
   // Income source routes
   app.get("/api/income-sources", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const incomeSources = await storage.getIncomeSources(userId);
-      res.json(incomeSources);
+      ok(res, incomeSources);
     } catch (error) {
       console.error("Error fetching income sources:", error);
-      res.status(500).json({ message: "Failed to fetch income sources" });
+      serverError(res);
     }
   });
 
   app.get("/api/income-sources/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const incomeSource = await storage.getIncomeSource(req.params.id, userId);
       if (!incomeSource) {
-        return res.status(404).json({ message: "Income source not found" });
+        return notFound(res);
       }
-      res.json(incomeSource);
+      ok(res, incomeSource);
     } catch (error) {
       console.error("Error fetching income source:", error);
-      res.status(500).json({ message: "Failed to fetch income source" });
+      serverError(res);
     }
   });
 
   app.post("/api/income-sources", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertIncomeSourceSchema.parse(req.body);
       const incomeSource = await storage.createIncomeSource(validatedData, userId);
-      res.status(201).json(incomeSource);
+      created(res, incomeSource);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error creating income source:", error);
-      res.status(500).json({ message: "Failed to create income source" });
+      serverError(res);
     }
   });
 
   app.put("/api/income-sources/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertIncomeSourceSchema.partial().parse(req.body);
       const incomeSource = await storage.updateIncomeSource(req.params.id, validatedData, userId);
       if (!incomeSource) {
-        return res.status(404).json({ message: "Income source not found" });
+        return notFound(res);
       }
-      res.json(incomeSource);
+      ok(res, incomeSource);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error updating income source:", error);
-      res.status(500).json({ message: "Failed to update income source" });
+      serverError(res);
     }
   });
 
   app.delete("/api/income-sources/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteIncomeSource(req.params.id, userId);
       if (!deleted) {
-        return res.status(404).json({ message: "Income source not found" });
+        return notFound(res);
       }
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
       console.error("Error deleting income source:", error);
-      res.status(500).json({ message: "Failed to delete income source" });
+      serverError(res);
     }
   });
 
@@ -576,10 +565,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/income-sources/:id/fund-distributions", requireAuth, async (req: any, res) => {
     try {
       const distributions = await storage.getIncomeSourceFundDistributions(req.params.id);
-      res.json(distributions);
+      ok(res, distributions);
     } catch (error) {
       console.error("Error fetching income source fund distributions:", error);
-      res.status(500).json({ message: "Failed to fetch fund distributions" });
+      serverError(res);
     }
   });
 
@@ -590,23 +579,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         incomeSourceId: req.params.id
       });
       const distribution = await storage.createIncomeSourceFundDistribution(validatedData);
-      res.status(201).json(distribution);
+      created(res, distribution);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error creating fund distribution:", error);
-      res.status(500).json({ message: "Failed to create fund distribution" });
+      serverError(res);
     }
   });
 
   app.delete("/api/income-sources/:id/fund-distributions", requireAuth, async (req: any, res) => {
     try {
       await storage.deleteIncomeSourceFundDistributions(req.params.id);
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
       console.error("Error deleting fund distributions:", error);
-      res.status(500).json({ message: "Failed to delete fund distributions" });
+      serverError(res);
     }
   });
 
@@ -614,10 +603,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/receipts/:id/items", requireAuth, async (req: any, res) => {
     try {
       const receiptItems = await storage.getReceiptItems(req.params.id);
-      res.json(receiptItems);
+      ok(res, receiptItems);
     } catch (error) {
       console.error("Error fetching receipt items:", error);
-      res.status(500).json({ message: "Failed to fetch receipt items" });
+      serverError(res);
     }
   });
 
@@ -628,41 +617,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         receiptId: req.params.id
       });
       const receiptItem = await storage.createReceiptItem(validatedData);
-      res.status(201).json(receiptItem);
+      created(res, receiptItem);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error creating receipt item:", error);
-      res.status(500).json({ message: "Failed to create receipt item" });
+      serverError(res);
     }
   });
 
   // Fund transfer routes
   app.get("/api/fund-transfers", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const transfers = await storage.getFundTransfers(userId);
-      res.json(transfers);
+      ok(res, transfers);
     } catch (error) {
       console.error("Error fetching fund transfers:", error);
-      res.status(500).json({ message: "Failed to fetch fund transfers" });
+      serverError(res);
     }
   });
 
   app.post("/api/fund-transfers", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const transferData = {
         ...req.body,
         amount: parseFloat(req.body.amount),
         userId
       };
       const transfer = await storage.createFundTransfer(transferData);
-      res.status(201).json(transfer);
+      created(res, transfer);
     } catch (error) {
       console.error("Error creating fund transfer:", error);
-      res.status(500).json({ message: "Failed to create fund transfer" });
+      serverError(res);
     }
   });
 
@@ -670,21 +659,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deleted = await storage.deleteFundTransfer(req.params.id);
       if (!deleted) {
-        return res.status(404).json({ message: "Fund transfer not found" });
+        return notFound(res);
       }
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
       console.error("Error deleting fund transfer:", error);
-      res.status(500).json({ message: "Failed to delete fund transfer" });
+      serverError(res);
     }
   });
 
   // Manual fund distribution routes
   app.get("/api/manual-fund-distributions", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const distributions = await storage.getManualFundDistributions(userId);
-      res.json(distributions);
+      ok(res, distributions);
     } catch (error) {
       console.error("Error fetching manual fund distributions:", error);
       res.status(500).json({ error: "Ошибка при получении ручных распределений" });
@@ -693,10 +682,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/manual-fund-distributions", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertManualFundDistributionSchema.parse(req.body);
       const distribution = await storage.createManualFundDistribution(validatedData, userId);
-      res.status(201).json(distribution);
+      created(res, distribution);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -708,10 +697,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/manual-fund-distributions/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const success = await storage.deleteManualFundDistribution(req.params.id, userId);
       if (success) {
-        res.json({ message: "Ручное распределение удалено" });
+        ok(res, { message: "Ручное распределение удалено" });
       } else {
         res.status(404).json({ error: "Распределение не найдено" });
       }
@@ -723,9 +712,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/unallocated-funds", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const unallocatedAmount = await storage.getUnallocatedFunds(userId);
-      res.json({ unallocatedAmount });
+      ok(res, { unallocatedAmount });
     } catch (error) {
       console.error("Error getting unallocated funds:", error);
       res.status(500).json({ error: "Ошибка при получении нераспределенных средств" });
@@ -735,9 +724,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Automatically distribute all unallocated funds based on income sources
   app.post("/api/distribute-unallocated-funds", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       await storage.distributeUnallocatedFunds(userId);
-      res.json({ message: "Funds distributed successfully" });
+      ok(res, { message: "Funds distributed successfully" });
     } catch (error) {
       console.error("Error distributing unallocated funds:", error);
       res.status(500).json({ error: "Ошибка при распределении средств" });
@@ -747,221 +736,221 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Fund balance routes
   app.get("/api/funds-with-balances", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const fundsWithBalances = await storage.getFundsWithBalances(userId);
-      res.json(fundsWithBalances);
+      ok(res, fundsWithBalances);
     } catch (error) {
       console.error("Error fetching funds with balances:", error);
-      res.status(500).json({ message: "Failed to fetch funds with balances" });
+      serverError(res);
     }
   });
 
   app.get("/api/funds/:id/balance", requireAuth, async (req: any, res) => {
     try {
       const balance = await storage.getFundBalance(req.params.id);
-      res.json({ balance });
+      ok(res, { balance });
     } catch (error) {
       console.error("Error fetching fund balance:", error);
-      res.status(500).json({ message: "Failed to fetch fund balance" });
+      serverError(res);
     }
   });
 
   // Distribution History endpoints
   app.get("/api/distribution-history", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const history = await storage.getDistributionHistoryWithItems(userId);
-      res.json(history);
+      ok(res, history);
     } catch (error) {
       console.error("Error fetching distribution history:", error);
-      res.status(500).json({ message: "Failed to fetch distribution history" });
+      serverError(res);
     }
   });
 
   app.get("/api/distribution-history/:id", requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       
       const history = await storage.getDistributionHistoryById(id, userId);
       if (history) {
-        res.json(history);
+        ok(res, history);
       } else {
-        res.status(404).json({ message: "Distribution history not found" });
+        notFound(res);
       }
     } catch (error) {
       console.error("Error fetching distribution history:", error);
-      res.status(500).json({ message: "Failed to fetch distribution history" });
+      serverError(res);
     }
   });
 
   app.delete("/api/distribution-history/:id", requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       
       const deleted = await storage.deleteDistributionHistory(id, userId);
       if (deleted) {
-        res.status(204).send();
+        noContent(res);
       } else {
-        res.status(404).json({ message: "Distribution history not found" });
+        notFound(res);
       }
     } catch (error) {
       console.error("Error deleting distribution history:", error);
-      res.status(500).json({ message: "Failed to delete distribution history" });
+      serverError(res);
     }
   });
 
   // Expense Nomenclature routes
   app.get("/api/expense-nomenclature", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const nomenclature = await storage.getExpenseNomenclature(userId);
-      res.json(nomenclature);
+      ok(res, nomenclature);
     } catch (error) {
       console.error("Error fetching expense nomenclature:", error);
-      res.status(500).json({ message: "Failed to fetch expense nomenclature" });
+      serverError(res);
     }
   });
 
   app.get("/api/expense-nomenclature/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const nomenclature = await storage.getExpenseNomenclatureById(req.params.id, userId);
       if (!nomenclature) {
-        return res.status(404).json({ message: "Expense nomenclature not found" });
+        return notFound(res);
       }
-      res.json(nomenclature);
+      ok(res, nomenclature);
     } catch (error) {
       console.error("Error fetching expense nomenclature:", error);
-      res.status(500).json({ message: "Failed to fetch expense nomenclature" });
+      serverError(res);
     }
   });
 
   app.post("/api/expense-nomenclature", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertExpenseNomenclatureSchema.parse(req.body);
       const nomenclature = await storage.createExpenseNomenclature(validatedData, userId);
-      res.status(201).json(nomenclature);
+      created(res, nomenclature);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error creating expense nomenclature:", error);
-      res.status(500).json({ message: "Failed to create expense nomenclature" });
+      serverError(res);
     }
   });
 
   app.put("/api/expense-nomenclature/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertExpenseNomenclatureSchema.partial().parse(req.body);
       const nomenclature = await storage.updateExpenseNomenclature(req.params.id, validatedData, userId);
       if (!nomenclature) {
-        return res.status(404).json({ message: "Expense nomenclature not found" });
+        return notFound(res);
       }
-      res.json(nomenclature);
+      ok(res, nomenclature);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error updating expense nomenclature:", error);
-      res.status(500).json({ message: "Failed to update expense nomenclature" });
+      serverError(res);
     }
   });
 
   app.delete("/api/expense-nomenclature/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteExpenseNomenclature(req.params.id, userId);
       if (!deleted) {
-        return res.status(404).json({ message: "Expense nomenclature not found" });
+        return notFound(res);
       }
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
       console.error("Error deleting expense nomenclature:", error);
-      res.status(500).json({ message: "Failed to delete expense nomenclature" });
+      serverError(res);
     }
   });
 
   // Expense Categories routes
   app.get("/api/expense-categories", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const categories = await storage.getExpenseCategories(userId);
-      res.json(categories);
+      ok(res, categories);
     } catch (error) {
       console.error("Error fetching expense categories:", error);
-      res.status(500).json({ message: "Failed to fetch expense categories" });
+      serverError(res);
     }
   });
 
   app.get("/api/expense-categories/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const category = await storage.getExpenseCategoryById(req.params.id, userId);
       if (!category) {
-        return res.status(404).json({ message: "Expense category not found" });
+        return notFound(res);
       }
-      res.json(category);
+      ok(res, category);
     } catch (error) {
       console.error("Error fetching expense category:", error);
-      res.status(500).json({ message: "Failed to fetch expense category" });
+      serverError(res);
     }
   });
 
   app.post("/api/expense-categories", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertExpenseCategorySchema.parse(req.body);
       const category = await storage.createExpenseCategory(validatedData, userId);
-      res.status(201).json(category);
+      created(res, category);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error creating expense category:", error);
-      res.status(500).json({ message: "Failed to create expense category" });
+      serverError(res);
     }
   });
 
   app.put("/api/expense-categories/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertExpenseCategorySchema.partial().parse(req.body);
       const category = await storage.updateExpenseCategory(req.params.id, validatedData, userId);
       if (!category) {
-        return res.status(404).json({ message: "Expense category not found" });
+        return notFound(res);
       }
-      res.json(category);
+      ok(res, category);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       console.error("Error updating expense category:", error);
-      res.status(500).json({ message: "Failed to update expense category" });
+      serverError(res);
     }
   });
 
   app.delete("/api/expense-categories/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteExpenseCategory(req.params.id, userId);
       if (!deleted) {
-        return res.status(404).json({ message: "Expense category not found" });
+        return notFound(res);
       }
-      res.status(204).send();
+      noContent(res);
     } catch (error) {
       console.error("Error deleting expense category:", error);
-      res.status(500).json({ message: "Failed to delete expense category" });
+      serverError(res);
     }
   });
 
   // Reports API
   app.get("/api/reports/fund-balance/:dateFrom/:dateTo", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const { dateFrom, dateTo } = req.params;
       
       // Get all funds for the user
@@ -1018,17 +1007,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
       
-      res.json(fundBalanceReport);
+      ok(res, fundBalanceReport);
     } catch (error) {
       console.error("Error generating fund balance report:", error);
-      res.status(500).json({ message: "Failed to generate fund balance report" });
+      serverError(res);
     }
   });
 
   // Expense Report API
   app.get("/api/reports/expenses/:dateFrom/:dateTo", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const { dateFrom, dateTo } = req.params;
       
       const costs = await storage.getCosts(userId);
@@ -1071,17 +1060,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert to array and filter out empty categories
       const reportData = Array.from(categoryMap.values()).filter((category: any) => category.expenses.length > 0);
       
-      res.json(reportData);
+      ok(res, reportData);
     } catch (error) {
       console.error("Error generating expense report:", error);
-      res.status(500).json({ message: "Failed to generate expense report" });
+      serverError(res);
     }
   });
 
   // Sponsor Report API
   app.get("/api/reports/sponsors/:dateFrom/:dateTo", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = validateUserId(req.user?.claims?.sub);
       const { dateFrom, dateTo } = req.params;
       
       const receipts = await storage.getReceipts(userId);
@@ -1124,10 +1113,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reportData = Array.from(sponsorMap.values())
         .filter((sponsor: any) => sponsor.totalAmount > 0);
       
-      res.json(reportData);
+      ok(res, reportData);
     } catch (error) {
       console.error("Error generating sponsor report:", error);
-      res.status(500).json({ message: "Failed to generate sponsor report" });
+      serverError(res);
     }
   });
 
