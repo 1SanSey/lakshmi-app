@@ -29,7 +29,7 @@ export default function AuthPage() {
         <CardHeader className="text-center">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <img 
-              src="/attached_assets/pngtree-lakshmi-puja-festival-special-maa-laxmi-devi-transparent-hindu-png-image_14139585_1755948009739.png" 
+              src="/lakshmi-logo.png" 
               alt="Lakshmi" 
               className="w-16 h-16 object-contain"
             />

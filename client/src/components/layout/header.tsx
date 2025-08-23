@@ -38,7 +38,7 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center">
               <img 
-                src="/attached_assets/pngtree-lakshmi-puja-festival-special-maa-laxmi-devi-transparent-hindu-png-image_14139585_1755948009739.png" 
+                src="/lakshmi-logo.png" 
                 alt="Lakshmi" 
                 className="w-8 h-8 object-contain"
               />
