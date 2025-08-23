@@ -5,10 +5,10 @@ import { ChartLine, LogOut } from "lucide-react";
 import type { User } from "@shared/schema";
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logout();
   };
 
   const getDisplayName = () => {

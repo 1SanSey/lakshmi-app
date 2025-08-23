@@ -11,7 +11,7 @@
  * - Автоматически обновляется при изменении сессии
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 /**
  * Хук для работы с аутентификацией
@@ -19,6 +19,8 @@ import { useQuery } from "@tanstack/react-query";
  * @returns Объект с данными пользователя и статусами загрузки/аутентификации
  */
 export function useAuth() {
+  const queryClient = useQueryClient();
+  
   // Запрос данных пользователя через React Query
   const { data: user, isLoading } = useQuery({
     queryKey: ["/api/auth/user"],  // Уникальный ключ для кэширования
@@ -39,10 +41,18 @@ export function useAuth() {
         method: 'POST', 
         credentials: 'include' 
       });
+      
+      // Очищаем кэш данных пользователя
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
       // После выхода перезагружаем страницу для отображения формы входа
       window.location.reload();
     } catch (error) {
       console.error('Ошибка при выходе:', error);
+      
+      // Очищаем кэш даже при ошибке
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
       // В случае ошибки все равно перезагружаем
       window.location.reload();
     }
