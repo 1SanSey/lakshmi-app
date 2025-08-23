@@ -61,17 +61,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
    * Возвращает данные пользователя из сессии после аутентификации через Replit OIDC.
    * Используется для проверки статуса аутентификации и получения профиля пользователя.
    */
-  app.get('/api/auth/user', requireAuth, async (req: any, res) => {
-    try {
-      const userId = validateUserId(req.user?.claims?.sub);
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return notFound(res, "User not found");
+  app.get('/api/auth/user', (req: any, res) => {
+    // Проверяем наличие пользователя в сессии
+    if (req.session && (req.session as any).userId) {
+      const userId = (req.session as any).userId;
+      const user = storage.getUserById!(userId);
+      
+      if (user) {
+        return ok(res, {
+          id: user.id,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        });
       }
-      ok(res, user);
-    } catch (error) {
-      handleError(error, res, "Failed to fetch user");
     }
+    
+    return unauthorized(res, "Необходимо войти в систему");
   });
 
   // === МАРШРУТЫ СПОНСОРОВ ===

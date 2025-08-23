@@ -95,6 +95,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
         username: user.username!,
         firstName: user.firstName || undefined,
         lastName: user.lastName || undefined,
+        claims: { sub: user.id } // Добавляем для совместимости с validateUserId
       };
       return next();
     }

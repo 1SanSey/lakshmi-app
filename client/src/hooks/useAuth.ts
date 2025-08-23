@@ -30,9 +30,28 @@ export function useAuth() {
     }),
   });
 
+  /**
+   * Функция выхода из системы
+   */
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { 
+        method: 'POST', 
+        credentials: 'include' 
+      });
+      // После выхода перезагружаем страницу для отображения формы входа
+      window.location.reload();
+    } catch (error) {
+      console.error('Ошибка при выходе:', error);
+      // В случае ошибки все равно перезагружаем
+      window.location.reload();
+    }
+  };
+
   return {
     user,                          // Данные пользователя (или null если не аутентифицирован)
     isLoading,                     // Флаг загрузки запроса
     isAuthenticated: !!user,       // true если пользователь аутентифицирован
+    logout,                        // Функция выхода из системы
   };
 }
