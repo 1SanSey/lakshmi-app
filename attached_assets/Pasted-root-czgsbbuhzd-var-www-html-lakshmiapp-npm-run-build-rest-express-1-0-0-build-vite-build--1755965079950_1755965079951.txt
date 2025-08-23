@@ -1,0 +1,52 @@
+root@czgsbbuhzd:/var/www/html/lakshmiapp# npm run build
+
+> rest-express@1.0.0 build
+> vite build && node -r dotenv/config node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.19 building for production...
+transforming (19) ../node_modules/wouter/esm/use-browser-location.jsBrowserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 2710 modules transformed.
+../dist/public/index.html                   0.82 kB │ gzip:   0.53 kB
+../dist/public/assets/index-CH3q91JF.css   68.09 kB │ gzip:  11.85 kB
+../dist/public/assets/index-D8g3Br5s.js   704.20 kB │ gzip: 203.28 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 9.93s
+^[[A/var/www/html/lakshmiapp/node_modules/esbuild/bin/esbuild:1
+ELF
+^
+
+SyntaxError: Invalid or unexpected token
+    at wrapSafe (node:internal/modules/cjs/loader:1620:18)
+    at Module._compile (node:internal/modules/cjs/loader:1662:20)
+    at Object..js (node:internal/modules/cjs/loader:1820:10)
+    at Module.load (node:internal/modules/cjs/loader:1423:32)
+    at Function._load (node:internal/modules/cjs/loader:1246:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.18.0
+root@czgsbbuhzd:/var/www/html/lakshmiapp# npm run start
+
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+
+file:///var/www/html/lakshmiapp/dist/index.js:1403
+  throw new Error(
+        ^
+
+Error: DATABASE_URL must be set. Did you forget to provision a database?
+    at file:///var/www/html/lakshmiapp/dist/index.js:1403:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.18.0
+root@czgsbbuhzd:/var/www/html/lakshmiapp# 
