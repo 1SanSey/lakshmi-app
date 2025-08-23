@@ -1,74 +1,142 @@
+/**
+ * Новое хранилище в памяти для LakshmiApp
+ * 
+ * Этот файл содержит основную бизнес-логику приложения для управления финансами.
+ * Класс NewMemStorage реализует интерфейс IStorage и предоставляет методы для:
+ * - Управления пользователями и аутентификации
+ * - Работы со спонсорами и поступлениями
+ * - Учета расходов и номенклатуры
+ * - Управления фондами и их распределением
+ * - Генерации отчетов и аналитики
+ * 
+ * Все данные хранятся в Map структурах в памяти для быстрого доступа.
+ * В производственной версии должна быть заменена на PostgreSQL базу данных.
+ */
+
 import { type IStorage } from "./storage";
 import { 
-  type User, 
-  type UpsertUser, 
-  type Sponsor, 
-  type InsertSponsor, 
-  type Receipt, 
-  type InsertReceipt,
-  type ReceiptItem,
-  type InsertReceiptItem,
-  type Cost, 
-  type InsertCost,
-  type CostItem,
-  type InsertCostItem,
-  type Fund,
-  type InsertFund,
-  type FundDistribution,
-  type InsertFundDistribution,
-  type FundTransfer,
-  type InsertFundTransfer,
-  type IncomeSource,
-  type InsertIncomeSource,
-  type IncomeSourceFundDistribution,
-  type InsertIncomeSourceFundDistribution,
-  type ManualFundDistribution,
-  type InsertManualFundDistribution,
-  type DistributionHistory,
-  type InsertDistributionHistory,
-  type DistributionHistoryItem,
-  type InsertDistributionHistoryItem,
-  type ExpenseNomenclature,
-  type InsertExpenseNomenclature,
-  type ExpenseCategory,
-  type InsertExpenseCategory
+  type User,              // Типы пользователей системы
+  type UpsertUser,        // Данные для создания/обновления пользователя
+  type Sponsor,           // Спонсоры - источники доходов
+  type InsertSponsor,     // Данные для создания спонсора
+  type Receipt,           // Поступления от спонсоров
+  type InsertReceipt,     // Данные для создания поступления
+  type ReceiptItem,       // Элементы поступлений (детализация)
+  type InsertReceiptItem, // Данные для создания элемента поступления
+  type Cost,              // Расходы с привязкой к фондам
+  type InsertCost,        // Данные для создания расхода
+  type CostItem,          // Элементы расходов (детализация)
+  type InsertCostItem,    // Данные для создания элемента расхода
+  type Fund,              // Фонды для управления средствами
+  type InsertFund,        // Данные для создания фонда
+  type FundDistribution,  // Автоматическое распределение по фондам
+  type InsertFundDistribution, // Данные для создания распределения
+  type FundTransfer,      // Переводы между фондами
+  type InsertFundTransfer, // Данные для создания перевода
+  type IncomeSource,      // Источники доходов
+  type InsertIncomeSource, // Данные для создания источника дохода
+  type IncomeSourceFundDistribution, // Настройки распределения по источникам
+  type InsertIncomeSourceFundDistribution, // Данные для настройки распределения
+  type ManualFundDistribution, // Ручное распределение средств
+  type InsertManualFundDistribution, // Данные для ручного распределения
+  type DistributionHistory, // История всех распределений
+  type InsertDistributionHistory, // Данные для записи истории
+  type DistributionHistoryItem, // Элементы истории распределения
+  type InsertDistributionHistoryItem, // Данные для элементов истории
+  type ExpenseNomenclature, // Номенклатура расходов (товары/услуги)
+  type InsertExpenseNomenclature, // Данные для создания номенклатуры
+  type ExpenseCategory,     // Категории расходов (статьи)
+  type InsertExpenseCategory // Данные для создания категории
 } from "@shared/schema";
+
+// Утилиты для генерации уникальных ID различных типов
 import {
-  generateId,
-  generateSponsorId,
-  generateReceiptId,
-  generateCostId,
-  generateFundId,
-  generateFundTransferId,
-  generateIncomeSourceId,
-  generateDistributionId,
-  generateNomenclatureId,
-  generateCategoryId,
-  generateItemId,
-  generateSourceId,
-  generateDistId
+  generateId,               // Общий генератор ID
+  generateSponsorId,        // ID для спонсоров
+  generateReceiptId,        // ID для поступлений
+  generateCostId,           // ID для расходов
+  generateFundId,           // ID для фондов
+  generateFundTransferId,   // ID для переводов между фондами
+  generateIncomeSourceId,   // ID для источников доходов
+  generateDistributionId,   // ID для распределений
+  generateNomenclatureId,   // ID для номенклатуры
+  generateCategoryId,       // ID для категорий
+  generateItemId,           // ID для элементов
+  generateSourceId,         // ID для источников
+  generateDistId            // ID для распределений
 } from "./utils/idGenerator";
+
+// Утилиты для безопасной работы с типами данных
 import { ensureString, ensureNonNull, safeDateParse, safeStringParse } from "./utils/typeHelpers";
 
+/**
+ * Основной класс хранилища данных в памяти
+ * 
+ * Реализует все операции CRUD для всех сущностей системы.
+ * Содержит бизнес-логику для:
+ * - Валидации данных и проверки прав доступа
+ * - Автоматического распределения средств по фондам
+ * - Расчета балансов и остатков фондов
+ * - Генерации отчетов и аналитики
+ */
 export class NewMemStorage implements IStorage {
+  // === ОСНОВНЫЕ КОЛЛЕКЦИИ ДАННЫХ ===
+  
+  /** Пользователи системы (ключ - ID пользователя из Replit OIDC) */
   private users: Map<string, User> = new Map();
+  
+  /** Спонсоры - источники поступлений (ключ - уникальный ID спонсора) */
   private sponsors: Map<string, Sponsor> = new Map();
+  
+  /** Поступления от спонсоров (ключ - уникальный ID поступления) */
   private receipts: Map<string, Receipt> = new Map();
+  
+  /** Детализированные элементы поступлений (ключ - уникальный ID элемента) */
   private receiptItems: Map<string, ReceiptItem> = new Map();
+  
+  /** Расходы с привязкой к фондам (ключ - уникальный ID расхода) */
   private costs: Map<string, Cost> = new Map();
+  
+  /** Детализированные элементы расходов (ключ - уникальный ID элемента) */
   private costItems: Map<string, CostItem> = new Map();
+  
+  /** Фонды для управления средствами (ключ - уникальный ID фонда) */
   private funds: Map<string, Fund> = new Map();
+  
+  /** Автоматические распределения поступлений по фондам (ключ - уникальный ID) */
   private fundDistributions: Map<string, FundDistribution> = new Map();
+  
+  /** Переводы средств между фондами (ключ - уникальный ID перевода) */
   private fundTransfers: Map<string, FundTransfer> = new Map();
+  
+  /** Источники доходов для настройки распределения (ключ - уникальный ID) */
   private incomeSources: Map<string, IncomeSource> = new Map();
+  
+  /** Настройки распределения средств по фондам для каждого источника дохода */
   private incomeSourceFundDistributions: Map<string, IncomeSourceFundDistribution> = new Map();
+  
+  /** Ручные распределения средств по фондам (ключ - уникальный ID) */
   private manualFundDistributions: Map<string, ManualFundDistribution> = new Map();
+  
+  /** История всех операций распределения средств (ключ - уникальный ID) */
   private distributionHistory: Map<string, DistributionHistory> = new Map();
+  
+  /** Детализированные элементы истории распределений (ключ - уникальный ID) */
   private distributionHistoryItems: Map<string, DistributionHistoryItem> = new Map();
+  
+  /** Номенклатура расходов - справочник товаров и услуг (ключ - уникальный ID) */
   private expenseNomenclature: Map<string, ExpenseNomenclature> = new Map();
+  
+  /** Категории расходов - статьи расходов для группировки (ключ - уникальный ID) */
   private expenseCategories: Map<string, ExpenseCategory> = new Map();
 
-  // User operations
+  // === ОПЕРАЦИИ С ПОЛЬЗОВАТЕЛЯМИ ===
+  
+  /**
+   * Получение пользователя по ID
+   * @param id - Уникальный идентификатор пользователя из Replit OIDC
+   * @returns Объект пользователя или undefined если не найден
+   */
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }

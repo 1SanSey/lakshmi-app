@@ -1,27 +1,66 @@
+/**
+ * API маршруты для LakshmiApp
+ * 
+ * Этот файл содержит все REST API endpoints для работы с данными.
+ * Все маршруты защищены аутентификацией через Replit OIDC.
+ * 
+ * Основные группы endpoints:
+ * - /api/auth/* - аутентификация и управление пользователями
+ * - /api/sponsors/* - управление спонсорами
+ * - /api/receipts/* - управление поступлениями
+ * - /api/costs/* - управление расходами
+ * - /api/funds/* - управление фондами
+ * - /api/fund-transfers/* - переводы между фондами
+ * - /api/nomenclature/* - номенклатура расходов
+ * - /api/expense-categories/* - категории расходов
+ * - /api/reports/* - отчеты и аналитика
+ */
+
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { newMemStorage as storage } from "./newMemStorage";
 import { isAuthenticated as requireAuth } from "./replitAuth";
+
+// Схемы валидации для входящих данных
 import { 
-  insertSponsorSchema, 
-  insertReceiptSchema, 
-  insertCostSchema,
-  insertCostItemSchema, 
-  insertFundSchema,
-  insertFundTransferSchema,
-  insertIncomeSourceSchema,
-  insertIncomeSourceFundDistributionSchema,
-  insertReceiptItemSchema,
-  insertManualFundDistributionSchema,
-  insertExpenseNomenclatureSchema,
-  insertExpenseCategorySchema
+  insertSponsorSchema,          // Валидация данных спонсора
+  insertReceiptSchema,          // Валидация данных поступления
+  insertCostSchema,             // Валидация данных расхода
+  insertCostItemSchema,         // Валидация элементов расхода
+  insertFundSchema,             // Валидация данных фонда
+  insertFundTransferSchema,     // Валидация перевода между фондами
+  insertIncomeSourceSchema,     // Валидация источника дохода
+  insertIncomeSourceFundDistributionSchema, // Валидация распределения по источникам
+  insertReceiptItemSchema,      // Валидация элементов поступления
+  insertManualFundDistributionSchema, // Валидация ручного распределения
+  insertExpenseNomenclatureSchema,    // Валидация номенклатуры
+  insertExpenseCategorySchema   // Валидация категории расходов
 } from "@shared/schema";
-import { z } from "zod";
+
+import { z } from "zod"; // Библиотека для валидации схем
+
+// Утилиты для обработки ошибок и валидации
 import { handleValidationError, handleError, validateUserId, parseNumericParam, parseDateParam } from "./utils/validation";
+
+// Утилиты для формирования HTTP ответов
 import { notFound, unauthorized, badRequest, serverError, created, ok, noContent } from "./utils/responseHelpers";
 
+/**
+ * Регистрация всех API маршрутов в Express приложении
+ * 
+ * @param app - Express приложение
+ * @returns HTTP сервер для работы с WebSocket и другими протоколами
+ */
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth routes
+  // === МАРШРУТЫ АУТЕНТИФИКАЦИИ ===
+  
+  /**
+   * Получение информации о текущем пользователе
+   * GET /api/auth/user
+   * 
+   * Возвращает данные пользователя из сессии после аутентификации через Replit OIDC.
+   * Используется для проверки статуса аутентификации и получения профиля пользователя.
+   */
   app.get('/api/auth/user', requireAuth, async (req: any, res) => {
     try {
       const userId = validateUserId(req.user?.claims?.sub);
@@ -35,7 +74,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sponsor routes
+  // === МАРШРУТЫ СПОНСОРОВ ===
+  
+  /**
+   * Получение списка спонсоров с возможностью поиска
+   * GET /api/sponsors?search=название
+   * 
+   * Возвращает всех спонсоров пользователя с опциональной фильтрацией по имени.
+   * Используется на странице управления спонсорами.
+   */
   app.get("/api/sponsors", requireAuth, async (req: any, res) => {
     try {
       const userId = validateUserId(req.user?.claims?.sub);

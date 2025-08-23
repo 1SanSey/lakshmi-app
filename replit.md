@@ -8,24 +8,77 @@ Preferred communication style: Simple, everyday language.
 
 # System Architecture
 
+## Обзор архитектуры
+
+LakshmiApp построен как современное full-stack приложение с четким разделением на фронтенд и бэкенд компоненты. Архитектура спроектирована для масштабируемости, безопасности и удобства сопровождения.
+
+### Основные компоненты системы:
+
+1. **React Frontend** - Клиентская часть с современным UI
+2. **Express Backend** - API сервер с бизнес-логикой  
+3. **PostgreSQL Database** - Реляционная база данных
+4. **Replit OIDC Auth** - Система аутентификации
+5. **In-Memory Storage** - Временное хранилище данных (NewMemStorage)
+
 ## Frontend Architecture
-- **Framework**: React with TypeScript using Vite as the build tool
-- **Routing**: Client-side routing with Wouter (lightweight React router)
-- **State Management**: TanStack Query (React Query) for server state management and caching
-- **UI Framework**: shadcn/ui components built on Radix UI primitives with Tailwind CSS
-- **Form Handling**: React Hook Form with Zod validation for type-safe form management
-- **Styling**: Tailwind CSS with CSS custom properties for theming and dark mode support
+- **Framework**: React 18 с TypeScript для типобезопасности
+- **Build Tool**: Vite для быстрой разработки и оптимизированной сборки
+- **Routing**: Wouter - легковесная библиотека клиентского роутинга
+- **State Management**: TanStack Query (React Query) для управления серверным состоянием и кэшированием
+- **UI Framework**: shadcn/ui компоненты на основе Radix UI с Tailwind CSS
+- **Form Handling**: React Hook Form с Zod валидацией для типобезопасных форм
+- **Styling**: Tailwind CSS с кастомными CSS свойствами для темизации
+- **Icons**: Lucide React для иконок интерфейса
+- **Notifications**: Встроенная система уведомлений (Toaster)
+
+### Структура фронтенда:
+```
+client/src/
+├── components/        # Переиспользуемые UI компоненты
+│   ├── ui/           # Базовые shadcn/ui компоненты
+│   └── layout/       # Компоненты layout (Header, Sidebar, MobileNav)
+├── pages/            # Страницы приложения (маршруты)
+├── hooks/            # Кастомные React хуки
+├── lib/              # Утилиты и конфигурации
+└── App.tsx           # Корневой компонент с роутингом
+```
 
 ## Backend Architecture
-- **Runtime**: Node.js with Express.js server
-- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
-- **Authentication**: Replit's OpenID Connect (OIDC) authentication system with Passport.js
-- **Session Management**: Express sessions stored in PostgreSQL using connect-pg-simple
-- **API Design**: RESTful API endpoints with consistent error handling and logging middleware
+- **Runtime**: Node.js 20+ с Express.js фреймворком
+- **Database**: PostgreSQL с планами перехода на Drizzle ORM
+- **Current Storage**: NewMemStorage - in-memory хранилище для разработки
+- **Authentication**: Replit OpenID Connect (OIDC) с Passport.js
+- **Session Management**: Express sessions в PostgreSQL через connect-pg-simple
+- **API Design**: RESTful архитектура с консистентной обработкой ошибок
+- **Validation**: Zod схемы для валидации входящих данных
+- **Error Handling**: Централизованная система обработки ошибок
 
-## Database Design
-- **ORM**: Drizzle with PostgreSQL dialect for schema management and migrations
-- **Schema Structure**:
+### Структура бэкенда:
+```
+server/
+├── utils/            # Утилиты для валидации, ответов, ID генерации
+│   ├── validation.ts     # Валидация данных и ошибок
+│   ├── responseHelpers.ts # HTTP ответы
+│   ├── idGenerator.ts    # Генерация уникальных ID
+│   └── typeHelpers.ts    # Помощники для работы с типами
+├── newMemStorage.ts  # Основное хранилище данных в памяти
+├── routes.ts         # API маршруты и endpoints
+├── replitAuth.ts     # Система аутентификации OIDC
+├── storage.ts        # Интерфейс для хранилища данных
+└── index.ts          # Точка входа сервера
+```
+
+## Система хранения данных
+
+### Текущая реализация (NewMemStorage)
+В настоящее время используется in-memory хранилище для быстрой разработки:
+
+- **Структура**: Map коллекции для каждого типа сущности
+- **Преимущества**: Быстрый доступ, простота отладки, автономность
+- **Ограничения**: Данные теряются при перезапуске сервера
+- **Миграция**: Планируется переход на PostgreSQL с Drizzle ORM
+
+### Схема данных:
   - Users table for authentication and profile data
   - Sponsors table for managing sponsor relationships (name, phone, active status)
   - Receipts table for income tracking (linked to sponsors, amount, date, description)
