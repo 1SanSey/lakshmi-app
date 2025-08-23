@@ -1,28 +1,53 @@
+/**
+ * Схема базы данных и типы для LakshmiApp
+ * 
+ * Этот файл содержит полное определение структуры данных приложения:
+ * - Таблицы PostgreSQL с использованием Drizzle ORM
+ * - Связи между таблицами (foreign keys, relations)
+ * - Схемы валидации Zod для API endpoints
+ * - TypeScript типы для типобезопасности
+ * 
+ * Структура данных поддерживает:
+ * - Многопользовательскую работу с изоляцией данных
+ * - Детализированный учет доходов и расходов
+ * - Гибкую систему распределения средств по фондам
+ * - Иерархическую номенклатуру и категории расходов
+ */
+
 import { sql } from 'drizzle-orm';
 import {
-  index,
-  jsonb,
-  pgTable,
-  timestamp,
-  varchar,
-  text,
-  decimal,
-  boolean,
-  integer,
+  index,          // Индексы для оптимизации запросов
+  jsonb,          // JSON данные (для сессий)
+  pgTable,        // Определение таблиц PostgreSQL
+  timestamp,      // Временные метки
+  varchar,        // Строковые поля с ограничением длины
+  text,           // Текстовые поля без ограничений
+  decimal,        // Денежные суммы с точностью
+  boolean,        // Логические поля
+  integer,        // Целые числа
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { relations } from "drizzle-orm";                // Определение связей между таблицами
+import { createInsertSchema } from "drizzle-zod";       // Автогенерация Zod схем из Drizzle
+import { z } from "zod";                                // Библиотека валидации схем
 
-// Session storage table for authentication
+// === ТАБЛИЦЫ СИСТЕМЫ ===
+
+/**
+ * Таблица сессий для аутентификации
+ * 
+ * Используется connect-pg-simple для хранения Express сессий в PostgreSQL.
+ * Обеспечивает персистентность сессий между перезапусками сервера.
+ */
 export const sessions = pgTable(
   "sessions",
   {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
+    sid: varchar("sid").primaryKey(),     // Уникальный идентификатор сессии
+    sess: jsonb("sess").notNull(),        // Данные сессии в JSON формате
+    expire: timestamp("expire").notNull(), // Время истечения сессии
   },
-  (table) => [index("IDX_session_expire").on(table.expire)],
+  (table) => [
+    index("IDX_session_expire").on(table.expire), // Индекс для очистки истекших сессий
+  ],
 );
 
 // Users table for authentication

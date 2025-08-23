@@ -1,3 +1,15 @@
+/**
+ * Страница аутентификации LakshmiApp
+ * 
+ * Предоставляет пользователю интерфейс для входа в систему через:
+ * - Социальные провайдеры (Google, GitHub) через Replit OIDC
+ * - Email/пароль форму (перенаправляет на Replit OIDC)
+ * - Вкладки для входа и регистрации (обе ведут к Replit)
+ * 
+ * Компонент отображается когда пользователь не аутентифицирован
+ * и автоматически скрывается после успешного входа.
+ */
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,16 +19,41 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartLine, Mail, Eye, EyeOff } from "lucide-react";
 import { FaGoogle, FaGithub } from "react-icons/fa";
 
+/**
+ * Компонент страницы аутентификации
+ * 
+ * Отображает форму входа с логотипом Лакшми и различными вариантами аутентификации.
+ * Все методы входа в итоге перенаправляют на Replit OIDC систему.
+ */
 export default function AuthPage() {
+  /** Состояние видимости пароля в форме */
   const [showPassword, setShowPassword] = useState(false);
+  
+  /** Состояние загрузки для блокировки кнопок во время перенаправления */
   const [isLoading, setIsLoading] = useState(false);
 
+  /**
+   * Обработчик входа через социальные сети
+   * 
+   * Перенаправляет пользователя на Replit OIDC с указанием провайдера.
+   * Устанавливает состояние загрузки для предотвращения множественных кликов.
+   * 
+   * @param provider - Название провайдера (google, github)
+   */
   const handleSocialLogin = (provider: string) => {
     setIsLoading(true);
     // Для Replit OIDC все провайдеры идут через /api/login
     window.location.href = `/api/login?provider=${provider}`;
   };
 
+  /**
+   * Обработчик входа через email/пароль
+   * 
+   * В текущей реализации перенаправляет на стандартную страницу Replit OIDC,
+   * поскольку приложение использует исключительно Replit аутентификацию.
+   * 
+   * @param isSignUp - Флаг регистрации (в текущей версии не используется)
+   */
   const handleEmailAuth = (isSignUp: boolean) => {
     setIsLoading(true);
     // Направляем на основную страницу входа Replit
