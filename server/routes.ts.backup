@@ -91,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.get("/api/sponsors", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const search = req.query.search as string;
       const sponsors = await storage.getSponsors(userId, search);
       ok(res, sponsors);
@@ -102,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/sponsors/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const sponsor = await storage.getSponsor(req.params.id, userId);
       if (!sponsor) {
         return notFound(res, "Sponsor not found");
@@ -115,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sponsors", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertSponsorSchema.parse(req.body);
       const sponsor = await storage.createSponsor(validatedData, userId);
       created(res, sponsor);
@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/sponsors/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertSponsorSchema.partial().parse(req.body);
       const sponsor = await storage.updateSponsor(req.params.id, validatedData, userId);
       if (!sponsor) {
@@ -142,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/sponsors/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteSponsor(req.params.id, userId);
       if (!deleted) {
         return notFound(res);
@@ -156,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Receipt routes
   app.get("/api/receipts", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const search = req.query.search as string;
       const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
       const toDate = req.query.toDate ? new Date(req.query.toDate as string) : undefined;
@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/receipts/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const receipt = await storage.getReceipt(req.params.id, userId);
       if (!receipt) {
         return notFound(res);
@@ -187,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/receipts", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const receiptData = {
         ...req.body,
         amount: parseFloat(req.body.amount) || 0,
@@ -207,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/receipts/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       
       // Преобразуем данные для обновления поступления
       const receiptData = {
@@ -236,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/receipts/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteReceipt(req.params.id, userId);
       if (!deleted) {
         return notFound(res);
@@ -280,7 +280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cost routes - новая структура
   app.get("/api/costs", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const search = req.query.search as string;
       const expenseCategoryId = req.query.expenseCategoryId as string;
       const fromDate = req.query.fromDate ? new Date(req.query.fromDate as string) : undefined;
@@ -299,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/costs/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const cost = await storage.getCost(req.params.id, userId);
       if (!cost) {
         return notFound(res);
@@ -313,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/costs", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       
       // Преобразуем данные вручную
       const requestData = {
@@ -339,7 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/costs/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertCostSchema.partial().parse(req.body);
       const cost = await storage.updateCost(req.params.id, validatedData, userId);
       if (!cost) {
@@ -354,7 +354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/costs/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteCost(req.params.id, userId);
       if (!deleted) {
         return notFound(res);
@@ -425,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Fund routes
   app.get("/api/funds", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const funds = await storage.getFunds(userId);
       ok(res, funds);
     } catch (error) {
@@ -436,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/funds/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const fund = await storage.getFund(req.params.id, userId);
       if (!fund) {
         return notFound(res);
@@ -450,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/funds", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertFundSchema.parse(req.body);
       const fund = await storage.createFund(validatedData, userId);
       created(res, fund);
@@ -465,7 +465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/funds/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertFundSchema.partial().parse(req.body);
       const fund = await storage.updateFund(req.params.id, validatedData, userId);
       if (!fund) {
@@ -483,7 +483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/funds/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteFund(req.params.id, userId);
       if (!deleted) {
         return notFound(res);
@@ -497,7 +497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/funds/balances", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const fundsWithBalances = await storage.getFundsWithBalances(userId);
       ok(res, fundsWithBalances);
     } catch (error) {
@@ -520,7 +520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard statistics routes
   app.get("/api/dashboard/stats", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const stats = await storage.getDashboardStats(userId);
       ok(res, stats);
     } catch (error) {
@@ -531,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/activity", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
       const activity = await storage.getRecentActivity(userId, limit);
       ok(res, activity);
@@ -544,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Income source routes
   app.get("/api/income-sources", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const incomeSources = await storage.getIncomeSources(userId);
       ok(res, incomeSources);
     } catch (error) {
@@ -555,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/income-sources/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const incomeSource = await storage.getIncomeSource(req.params.id, userId);
       if (!incomeSource) {
         return notFound(res);
@@ -569,7 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/income-sources", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertIncomeSourceSchema.parse(req.body);
       const incomeSource = await storage.createIncomeSource(validatedData, userId);
       created(res, incomeSource);
@@ -584,7 +584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/income-sources/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertIncomeSourceSchema.partial().parse(req.body);
       const incomeSource = await storage.updateIncomeSource(req.params.id, validatedData, userId);
       if (!incomeSource) {
@@ -602,7 +602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/income-sources/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteIncomeSource(req.params.id, userId);
       if (!deleted) {
         return notFound(res);
@@ -683,7 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Fund transfer routes
   app.get("/api/fund-transfers", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const transfers = await storage.getFundTransfers(userId);
       ok(res, transfers);
     } catch (error) {
@@ -694,7 +694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/fund-transfers", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const transferData = {
         ...req.body,
         amount: parseFloat(req.body.amount),
@@ -724,7 +724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Manual fund distribution routes
   app.get("/api/manual-fund-distributions", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const distributions = await storage.getManualFundDistributions(userId);
       ok(res, distributions);
     } catch (error) {
@@ -735,7 +735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/manual-fund-distributions", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertManualFundDistributionSchema.parse(req.body);
       const distribution = await storage.createManualFundDistribution(validatedData, userId);
       created(res, distribution);
@@ -750,7 +750,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/manual-fund-distributions/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const success = await storage.deleteManualFundDistribution(req.params.id, userId);
       if (success) {
         ok(res, { message: "Ручное распределение удалено" });
@@ -765,7 +765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/unallocated-funds", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const unallocatedAmount = await storage.getUnallocatedFunds(userId);
       ok(res, { unallocatedAmount });
     } catch (error) {
@@ -777,7 +777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Automatically distribute all unallocated funds based on income sources
   app.post("/api/distribute-unallocated-funds", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       await storage.distributeUnallocatedFunds(userId);
       ok(res, { message: "Funds distributed successfully" });
     } catch (error) {
@@ -789,7 +789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Fund balance routes
   app.get("/api/funds-with-balances", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const fundsWithBalances = await storage.getFundsWithBalances(userId);
       ok(res, fundsWithBalances);
     } catch (error) {
@@ -811,7 +811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Distribution History endpoints
   app.get("/api/distribution-history", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const history = await storage.getDistributionHistoryWithItems(userId);
       ok(res, history);
     } catch (error) {
@@ -823,7 +823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/distribution-history/:id", requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       
       const history = await storage.getDistributionHistoryById(id, userId);
       if (history) {
@@ -840,7 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/distribution-history/:id", requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       
       const deleted = await storage.deleteDistributionHistory(id, userId);
       if (deleted) {
@@ -857,7 +857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Expense Nomenclature routes
   app.get("/api/expense-nomenclature", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const nomenclature = await storage.getExpenseNomenclature(userId);
       ok(res, nomenclature);
     } catch (error) {
@@ -868,7 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/expense-nomenclature/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const nomenclature = await storage.getExpenseNomenclatureById(req.params.id, userId);
       if (!nomenclature) {
         return notFound(res);
@@ -882,7 +882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/expense-nomenclature", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertExpenseNomenclatureSchema.parse(req.body);
       const nomenclature = await storage.createExpenseNomenclature(validatedData, userId);
       created(res, nomenclature);
@@ -897,7 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/expense-nomenclature/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertExpenseNomenclatureSchema.partial().parse(req.body);
       const nomenclature = await storage.updateExpenseNomenclature(req.params.id, validatedData, userId);
       if (!nomenclature) {
@@ -915,7 +915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/expense-nomenclature/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteExpenseNomenclature(req.params.id, userId);
       if (!deleted) {
         return notFound(res);
@@ -930,7 +930,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Expense Categories routes
   app.get("/api/expense-categories", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const categories = await storage.getExpenseCategories(userId);
       ok(res, categories);
     } catch (error) {
@@ -941,7 +941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/expense-categories/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const category = await storage.getExpenseCategoryById(req.params.id, userId);
       if (!category) {
         return notFound(res);
@@ -955,7 +955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/expense-categories", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertExpenseCategorySchema.parse(req.body);
       const category = await storage.createExpenseCategory(validatedData, userId);
       created(res, category);
@@ -970,7 +970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/expense-categories/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const validatedData = insertExpenseCategorySchema.partial().parse(req.body);
       const category = await storage.updateExpenseCategory(req.params.id, validatedData, userId);
       if (!category) {
@@ -988,7 +988,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/expense-categories/:id", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const deleted = await storage.deleteExpenseCategory(req.params.id, userId);
       if (!deleted) {
         return notFound(res);
@@ -1003,7 +1003,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reports API
   app.get("/api/reports/fund-balance/:dateFrom/:dateTo", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const { dateFrom, dateTo } = req.params;
       
       // Get all funds for the user
@@ -1070,7 +1070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Expense Report API
   app.get("/api/reports/expenses/:dateFrom/:dateTo", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const { dateFrom, dateTo } = req.params;
       
       const costs = await storage.getCosts(userId);
@@ -1123,7 +1123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sponsor Report API
   app.get("/api/reports/sponsors/:dateFrom/:dateTo", requireAuth, async (req: any, res) => {
     try {
-      const userId = validateUserId(req.user?.id);
+      const userId = validateUserId(req.user?.claims?.sub);
       const { dateFrom, dateTo } = req.params;
       
       const receipts = await storage.getReceipts(userId);
